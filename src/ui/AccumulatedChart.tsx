@@ -9,7 +9,7 @@ import Svg, {
   Stop,
 } from 'react-native-svg';
 
-import type { ProjectionMonth } from '@/domain/types';
+import type { Cents, Competence } from '@/domain/types';
 import { makeStyles, spacing, useColors } from '@/theme';
 import { formatMonthShort } from '@/utils/date';
 import { formatMoneyCompact } from '@/utils/money';
@@ -22,56 +22,61 @@ const PADDING_TOP = 16;
 const PADDING_BOTTOM = 22;
 const DOT_RADIUS = 4;
 
+export interface ChartPoint {
+  competence: Competence;
+  value: Cents;
+}
+
 export interface AccumulatedChartProps {
-  projection: ProjectionMonth[];
+  points: ChartPoint[];
   onSelectMonth?: (competence: string) => void;
 }
 
-interface Point {
+interface PlotPoint {
   x: number;
   y: number;
-  month: ProjectionMonth;
+  point: ChartPoint;
 }
 
-export function AccumulatedChart({ projection, onSelectMonth }: AccumulatedChartProps) {
+export function AccumulatedChart({ points, onSelectMonth }: AccumulatedChartProps) {
   const styles = useStyles();
   const colors = useColors();
   const [width, setWidth] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
 
   const geometry = useMemo(() => {
-    if (width === 0 || projection.length === 0) return null;
+    if (width === 0 || points.length === 0) return null;
 
-    const values = projection.map((month) => month.accumulated);
+    const values = points.map((item) => item.value);
     const max = Math.max(...values, 0);
     const min = Math.min(...values, 0);
     const range = max - min || 1;
 
     const plotHeight = HEIGHT - PADDING_TOP - PADDING_BOTTOM;
-    const step = projection.length > 1 ? width / (projection.length - 1) : 0;
+    const step = points.length > 1 ? width / (points.length - 1) : 0;
     const toY = (value: number) => PADDING_TOP + ((max - value) / range) * plotHeight;
 
-    const points: Point[] = projection.map((month, index) => ({
-      x: projection.length > 1 ? index * step : width / 2,
-      y: toY(month.accumulated),
-      month,
+    const plotted: PlotPoint[] = points.map((item, index) => ({
+      x: points.length > 1 ? index * step : width / 2,
+      y: toY(item.value),
+      point: item,
     }));
 
-    const linePath = points
-      .map((point, index) => `${index === 0 ? 'M' : 'L'}${point.x.toFixed(2)},${point.y.toFixed(2)}`)
+    const linePath = plotted
+      .map((item, index) => `${index === 0 ? 'M' : 'L'}${item.x.toFixed(2)},${item.y.toFixed(2)}`)
       .join(' ');
 
     const zeroY = toY(0);
-    const areaPath = `${linePath} L${points[points.length - 1].x.toFixed(2)},${zeroY.toFixed(
+    const areaPath = `${linePath} L${plotted[plotted.length - 1].x.toFixed(2)},${zeroY.toFixed(
       2,
-    )} L${points[0].x.toFixed(2)},${zeroY.toFixed(2)} Z`;
+    )} L${plotted[0].x.toFixed(2)},${zeroY.toFixed(2)} Z`;
 
-    return { points, linePath, areaPath, zeroY, max, min };
-  }, [projection, width]);
+    return { plotted, linePath, areaPath, zeroY, max, min };
+  }, [points, width]);
 
-  const activeIndex = selected ?? projection.length - 1;
-  const activeMonth = projection[activeIndex];
-  const endsNegative = (projection[projection.length - 1]?.accumulated ?? 0) < 0;
+  const activeIndex = selected ?? points.length - 1;
+  const activeMonth = points[activeIndex];
+  const endsNegative = (points[points.length - 1]?.value ?? 0) < 0;
   const lineColor = endsNegative ? colors.negative : colors.brand;
 
   return (
@@ -81,9 +86,9 @@ export function AccumulatedChart({ projection, onSelectMonth }: AccumulatedChart
         onLayout={(event) => setWidth(event.nativeEvent.layout.width)}
         accessibilityRole="image"
         accessibilityLabel={
-          projection.length > 0
-            ? `Saldo acumulado ao longo de ${projection.length} meses, terminando em ${formatMoneyCompact(
-                projection[projection.length - 1].accumulated,
+          points.length > 0
+            ? `Evolução ao longo de ${points.length} meses, terminando em ${formatMoneyCompact(
+                points[points.length - 1].value,
               )}`
             : 'Sem dados de projeção'
         }
@@ -118,16 +123,16 @@ export function AccumulatedChart({ projection, onSelectMonth }: AccumulatedChart
               fill="none"
             />
 
-            {geometry.points.map((point, index) => {
-              const isNegative = point.month.accumulated < 0;
+            {geometry.plotted.map((item, index) => {
+              const isNegative = item.point.value < 0;
               const isActive = index === activeIndex;
               if (!isNegative && !isActive) return null;
 
               return (
                 <Circle
-                  key={point.month.competence}
-                  cx={point.x}
-                  cy={point.y}
+                  key={item.point.competence}
+                  cx={item.x}
+                  cy={item.y}
                   r={isActive ? DOT_RADIUS + 1 : DOT_RADIUS}
                   fill={isNegative ? colors.negative : lineColor}
                   stroke={colors.bg}
@@ -139,16 +144,16 @@ export function AccumulatedChart({ projection, onSelectMonth }: AccumulatedChart
         ) : null}
 
         <View style={styles.touchLayer} pointerEvents="box-none">
-          {projection.map((month, index) => (
+          {points.map((item, index) => (
             <Pressable
-              key={month.competence}
+              key={item.competence}
               accessibilityRole="button"
-              accessibilityLabel={`${formatMonthShort(month.competence)}, acumulado ${formatMoneyCompact(
-                month.accumulated,
+              accessibilityLabel={`${formatMonthShort(item.competence)}, ${formatMoneyCompact(
+                item.value,
               )}`}
               onPress={() => {
                 setSelected(index);
-                onSelectMonth?.(month.competence);
+                onSelectMonth?.(item.competence);
               }}
               style={styles.touchTarget}
             />
@@ -161,7 +166,7 @@ export function AccumulatedChart({ projection, onSelectMonth }: AccumulatedChart
           <Text variant="caption" tone="muted">
             {formatMonthShort(activeMonth.competence)}
           </Text>
-          <Money value={activeMonth.accumulated} variant="label" colorBySign />
+          <Money value={activeMonth.value} variant="label" colorBySign />
         </View>
       ) : null}
     </View>

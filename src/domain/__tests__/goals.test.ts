@@ -1,6 +1,8 @@
 import {
+  checkDeadline,
   contributionNeededFor,
   formatRate,
+  monthsUntil,
   goalBalance,
   monthlyRateFrom,
   monthsToTarget,
@@ -159,5 +161,49 @@ describe('formatRate', () => {
   it('escreve a taxa em porcentagem ao ano', () => {
     expect(formatRate(1065)).toBe('10,65% a.a.');
     expect(formatRate(0)).toBe('0,00% a.a.');
+  });
+});
+
+describe('prazo da meta', () => {
+  it('conta os meses até a data limite', () => {
+    expect(monthsUntil('2027-06-30', '2026-09')).toBe(9);
+  });
+
+  it('data no passado não tem prazo', () => {
+    expect(monthsUntil('2026-01-15', '2026-09')).toBeNull();
+  });
+
+  it('mês atual não conta como prazo', () => {
+    expect(monthsUntil('2026-09-30', '2026-09')).toBeNull();
+  });
+
+  it('diz quanto precisa aportar para bater no prazo', () => {
+    const check = checkDeadline(0, 10_000, 0, 120_000, '2027-09-30', '2026-09');
+    expect(check).not.toBeNull();
+    expect(check?.months).toBe(12);
+    expect(check?.needed).toBe(10_000);
+    expect(check?.onTrack).toBe(true);
+  });
+
+  it('aponta a falta quando o aporte não alcança', () => {
+    const check = checkDeadline(0, 5_000, 0, 120_000, '2027-09-30', '2026-09');
+    expect(check?.onTrack).toBe(false);
+    expect(check?.shortfall).toBe(5_000);
+  });
+
+  it('rendimento reduz o aporte necessário', () => {
+    const semJuros = checkDeadline(0, 0, 0, 120_000, '2027-09-30', '2026-09');
+    const comJuros = checkDeadline(0, 0, 1200, 120_000, '2027-09-30', '2026-09');
+    expect(comJuros!.needed).toBeLessThan(semJuros!.needed);
+  });
+
+  it('sem meta de valor, não há o que checar', () => {
+    expect(checkDeadline(0, 10_000, 0, 0, '2027-09-30', '2026-09')).toBeNull();
+  });
+
+  it('o aporte necessário realmente bate a meta no prazo', () => {
+    const check = checkDeadline(50_000, 0, 1065, 500_000, '2028-09-30', '2026-09')!;
+    const series = projectGoal(50_000, check.needed, 1065, 500_000, check.months, '2026-09');
+    expect(series[check.months - 1].balance).toBeGreaterThanOrEqual(500_000);
   });
 });

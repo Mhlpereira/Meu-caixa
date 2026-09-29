@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 import {
+  checkDeadline,
   contributionNeededFor,
   formatRate,
   monthsToTarget,
@@ -19,7 +20,13 @@ import {
 } from '@/repositories/goals';
 import { useAppStore } from '@/stores/app';
 import { makeStyles, palette, radius, spacing, useColors , useTint } from '@/theme';
-import { addMonths, currentCompetence, formatMonthSlash } from '@/utils/date';
+import {
+  addMonths,
+  currentCompetence,
+  dueDateIn,
+  formatMonthSlash,
+  type ISODate,
+} from '@/utils/date';
 import { appendDigit, formatMoney, removeDigit } from '@/utils/money';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
@@ -29,6 +36,7 @@ import { Keypad } from '@/ui/Keypad';
 import { Money } from '@/ui/Money';
 import { ProgressBar } from '@/ui/ProgressBar';
 import { Screen } from '@/ui/Screen';
+import { DateField } from '@/ui/DateField';
 import { Segmented } from '@/ui/Segmented';
 import { Sheet, SheetOption } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
@@ -87,6 +95,10 @@ export default function GoalsScreen() {
   const [initialAmount, setInitialAmount] = useState(0);
   const [rateBp, setRateBp] = useState(1065);
   const [profileId, setProfileId] = useState('');
+  const [hasDeadline, setHasDeadline] = useState(false);
+  const [targetDate, setTargetDate] = useState<ISODate>(() =>
+    dueDateIn(addMonths(currentCompetence(), 12), 1),
+  );
   const [activeField, setActiveField] = useState<AmountField>('target');
   const [profileSheet, setProfileSheet] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -112,6 +124,8 @@ export default function GoalsScreen() {
     setContribution(0);
     setInitialAmount(0);
     setRateBp(1065);
+    setHasDeadline(false);
+    setTargetDate(dueDateIn(addMonths(currentCompetence(), 12), 1));
     setProfileId(defaultProfile);
     setActiveField('target');
     setError(null);
@@ -127,6 +141,8 @@ export default function GoalsScreen() {
     setContribution(goal.monthlyContribution);
     setInitialAmount(goal.initialAmount);
     setRateBp(goal.annualRateBp);
+    setHasDeadline(goal.targetDate !== null);
+    if (goal.targetDate) setTargetDate(goal.targetDate);
     setProfileId(goal.profileId);
     setActiveField('target');
     setError(null);
@@ -144,6 +160,9 @@ export default function GoalsScreen() {
 
   const months = monthsToTarget(initialAmount, contribution, rateBp, targetAmount);
   const suggested = contributionNeededFor(initialAmount, rateBp, targetAmount, 12);
+  const deadline = hasDeadline
+    ? checkDeadline(initialAmount, contribution, rateBp, targetAmount, targetDate, currentCompetence())
+    : null;
 
   const save = async () => {
     const trimmed = name.trim();
@@ -168,7 +187,7 @@ export default function GoalsScreen() {
       monthlyContribution: contribution,
       annualRateBp: rateBp,
       initialAmount,
-      targetDate: null,
+      targetDate: hasDeadline ? targetDate : null,
     };
 
     if (editing) await updateGoal(editing.id, input);
@@ -343,6 +362,41 @@ export default function GoalsScreen() {
             </View>
           ) : null}
 
+          <Field label="Prazo">
+            <Segmented
+              value={hasDeadline ? 'until' : 'open'}
+              onChange={(value) => setHasDeadline(value === 'until')}
+              options={[
+                { value: 'open', label: 'Sem prazo' },
+                { value: 'until', label: 'Até uma data' },
+              ]}
+            />
+            {hasDeadline ? (
+              <DateField value={targetDate} onChange={setTargetDate} label="Data limite" />
+            ) : null}
+          </Field>
+
+          {deadline ? (
+            <View
+              style={[
+                styles.preview,
+                { backgroundColor: deadline.onTrack ? colors.positiveDim : colors.warningDim },
+              ]}
+            >
+              {deadline.onTrack ? (
+                <Text variant="caption" tone="positive">
+                  Com {formatMoney(contribution)} por mês você bate a meta em{' '}
+                  {deadline.months} {deadline.months === 1 ? 'mês' : 'meses'}, dentro do prazo.
+                </Text>
+              ) : (
+                <Text variant="caption" tone="warning">
+                  Para bater até lá seriam {formatMoney(deadline.needed)} por mês —{' '}
+                  {formatMoney(deadline.shortfall)} a mais do que você está pondo.
+                </Text>
+              )}
+            </View>
+          ) : null}
+
           <Field label="Perfil">
             <Pressable
               accessibilityRole="button"
@@ -488,6 +542,16 @@ function GoalCard({
       {goal.targetAmount > 0 ? (
         <>
           <ProgressBar ratio={item.progress ?? 0} color={goal.color} />
+          {goal.targetDate ? (
+            <View style={styles.goalFooter}>
+              <Ionicons name="time-outline" size={12} color={colors.textFaint} />
+              <Text variant="caption" tone="faint">
+                {' '}
+                até {formatMonthSlash(goal.targetDate.slice(0, 7))}
+              </Text>
+            </View>
+          ) : null}
+
           <View style={styles.goalFooter}>
             {item.remaining > 0 ? (
               <>

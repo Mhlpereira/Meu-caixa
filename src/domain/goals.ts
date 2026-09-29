@@ -1,5 +1,5 @@
 import type { Cents, Competence, ISODate } from './types';
-import { addMonths } from '@/utils/date';
+import { addMonths, monthsBetween } from '@/utils/date';
 
 export interface Goal {
   id: string;
@@ -137,6 +137,39 @@ export function contributionNeededFor(
 
   const annuityFactor = rate === 0 ? months : (growth - 1) / rate;
   return Math.ceil(missing / annuityFactor);
+}
+
+export function monthsUntil(target: ISODate, from: Competence): number | null {
+  const months = monthsBetween(from, target.slice(0, 7));
+  return months > 0 ? months : null;
+}
+
+export interface DeadlineCheck {
+  months: number;
+  needed: Cents;
+  shortfall: Cents;
+  onTrack: boolean;
+}
+
+export function checkDeadline(
+  startingBalance: Cents,
+  monthlyContribution: Cents,
+  annualRateBp: number,
+  targetAmount: Cents,
+  targetDate: ISODate,
+  from: Competence,
+): DeadlineCheck | null {
+  const months = monthsUntil(targetDate, from);
+  if (months === null || targetAmount <= 0) return null;
+
+  const needed = contributionNeededFor(startingBalance, annualRateBp, targetAmount, months) ?? 0;
+
+  return {
+    months,
+    needed,
+    shortfall: Math.max(needed - monthlyContribution, 0),
+    onTrack: monthlyContribution >= needed,
+  };
 }
 
 export function totalMonthlyContribution(goals: Goal[]): Cents {

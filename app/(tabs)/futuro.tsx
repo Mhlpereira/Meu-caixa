@@ -3,6 +3,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { ALL_PROFILES } from '@/domain/types';
 import { useGoalProjection } from '@/hooks/useGoalProjection';
 import { useProjection } from '@/hooks/useProjection';
 import { useAppStore } from '@/stores/app';
@@ -18,7 +19,6 @@ import { ProfileSwitcher } from '@/ui/ProfileSwitcher';
 import { Screen, SectionHeader } from '@/ui/Screen';
 import { Sheet, SheetOption } from '@/ui/Sheet';
 import { Text } from '@/ui/Text';
-import { ALL_PROFILES } from '@/domain/types';
 
 const RANGES = [6, 12, 24, 36];
 
@@ -26,6 +26,7 @@ export default function FutureScreen() {
   const styles = useStyles();
   const colors = useColors();
   const router = useRouter();
+
   const setCompetence = useAppStore((state) => state.setCompetence);
   const scope = useAppStore((state) => state.scope);
 
@@ -34,15 +35,23 @@ export default function FutureScreen() {
 
   const { projection, loading } = useProjection(months);
 
-  const monthlyBalances = useMemo(
-    () => projection.map((month) => month.balance),
-    [projection],
-  );
+  const monthlyBalances = useMemo(() => projection.map((month) => month.balance), [projection]);
   const wealth = useGoalProjection(months, monthlyBalances);
 
-  const final = projection[projection.length - 1];
-  const hasData = projection.some((month) => month.income !== 0 || month.expense !== 0);
-  const negativeMonths = projection.filter((month) => month.balance < 0);
+  const investing = wealth.monthlyContribution > 0 || wealth.startingInvested > 0;
+
+  const chartPoints = useMemo(
+    () => wealth.months.map((month) => ({ competence: month.competence, value: month.invested })),
+    [wealth.months],
+  );
+
+  const tightMonths = useMemo(
+    () =>
+      wealth.months.filter(
+        (month, index) => month.contributed > 0 && (monthlyBalances[index] ?? 0) < month.contributed,
+      ),
+    [wealth.months, monthlyBalances],
+  );
 
   const goToMonth = (competence: string) => {
     setCompetence(competence);
@@ -71,94 +80,72 @@ export default function FutureScreen() {
           </Pressable>
         </View>
 
-        {loading ? null : !hasData ? (
+        {loading ? null : !investing ? (
           <EmptyState
-            icon="trending-up-outline"
-            title="Sem projeção ainda"
-            description="Cadastre sua renda e seus gastos fixos para ver quanto você junta nos próximos meses."
+            icon="albums-outline"
+            title="Nenhuma caixinha ainda"
+            description="O Futuro projeta quanto você acumula investindo. Crie uma caixinha com aporte mensal e rendimento para ver a curva."
+            actionLabel="Criar caixinha"
+            onAction={() => router.push('/goals')}
           />
         ) : (
           <>
-            <Card style={styles.chartCard}>
-              <View>
-                <Text variant="label" tone="muted">
-                  Em {months} meses
+            <Card style={styles.heroCard}>
+              <View style={styles.contributionRow}>
+                <Ionicons name="repeat" size={14} color={colors.brandText} />
+                <Text variant="caption" tone="muted">
+                  Investindo{' '}
                 </Text>
                 <Money
-                  value={
-                    wealth.monthlyContribution > 0 || wealth.startingInvested > 0
-                      ? wealth.finalInvested + wealth.finalFreeCash
-                      : (final?.accumulated ?? 0)
-                  }
-                  variant="title"
-                  colorBySign
-                  showSign
+                  value={wealth.monthlyContribution}
+                  variant="label"
+                  color={colors.brandText}
                 />
+                <Text variant="caption" tone="muted">
+                  {' '}
+                  por mês
+                </Text>
               </View>
 
-              <AccumulatedChart projection={projection} onSelectMonth={() => undefined} />
+              <View>
+                <Text variant="label" tone="muted">
+                  Em {months} meses você terá
+                </Text>
+                <Money value={wealth.finalInvested} variant="display" color={colors.brandText} />
+              </View>
 
-              {wealth.monthlyContribution > 0 || wealth.startingInvested > 0 ? (
-                <View style={styles.wealthBreakdown}>
-                  <View style={styles.wealthRow}>
-                    <View style={styles.wealthLabel}>
-                      <Ionicons name="albums" size={13} color={colors.brandText} />
-                      <Text variant="caption" tone="muted">
-                        Nas caixinhas
-                      </Text>
-                    </View>
-                    <Money value={wealth.finalInvested} variant="label" color={colors.brandText} />
-                  </View>
+              <AccumulatedChart points={chartPoints} />
 
-                  <View style={styles.wealthRow}>
-                    <View style={styles.wealthLabel}>
-                      <Ionicons name="trending-up" size={13} color={colors.positive} />
-                      <Text variant="caption" tone="muted">
-                        Disso, rendimento
-                      </Text>
-                    </View>
-                    <Money value={wealth.totalYield} variant="caption" color={colors.positive} />
-                  </View>
-
-                  <View style={styles.wealthRow}>
-                    <View style={styles.wealthLabel}>
-                      <Ionicons name="wallet-outline" size={13} color={colors.textMuted} />
-                      <Text variant="caption" tone="muted">
-                        Sobra na conta
-                      </Text>
-                    </View>
-                    <Money
-                      value={wealth.finalFreeCash}
-                      variant="caption"
-                      colorBySign
-                    />
-                  </View>
-                </View>
-              ) : (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel="Criar uma caixinha"
-                  onPress={() => router.push('/goals')}
-                  style={styles.goalsHint}
-                >
-                  <Ionicons name="albums-outline" size={14} color={colors.brandText} />
-                  <Text variant="caption" tone="brand" style={styles.goalsHintText}>
-                    Crie uma caixinha para projetar com rendimento, em vez de somar toda a sobra
+              <View style={styles.breakdown}>
+                <View style={styles.breakdownRow}>
+                  <Text variant="caption" tone="muted">
+                    Você aporta
                   </Text>
-                </Pressable>
-              )}
+                  <Money value={wealth.totalContributed} variant="label" />
+                </View>
+
+                <View style={styles.breakdownRow}>
+                  <View style={styles.yieldLabel}>
+                    <Ionicons name="trending-up" size={13} color={colors.positive} />
+                    <Text variant="caption" tone="muted">
+                      Rende
+                    </Text>
+                  </View>
+                  <Money value={wealth.totalYield} variant="label" color={colors.positive} />
+                </View>
+              </View>
             </Card>
 
-            {negativeMonths.length > 0 ? (
+            {tightMonths.length > 0 ? (
               <Card style={styles.warningCard}>
                 <Ionicons name="warning" size={18} color={colors.warning} />
                 <Text variant="caption" tone="warning" style={styles.warningText}>
-                  {negativeMonths.length === 1
-                    ? `${formatMonthShort(negativeMonths[0].competence)} fecha no vermelho.`
-                    : `${negativeMonths.length} meses fecham no vermelho: ${negativeMonths
+                  {tightMonths.length === 1
+                    ? `Em ${formatMonthShort(tightMonths[0].competence)} a sobra do mês não cobre o aporte.`
+                    : `Em ${tightMonths.length} meses a sobra não cobre o aporte: ${tightMonths
                         .slice(0, 3)
                         .map((month) => formatMonthShort(month.competence))
-                        .join(', ')}${negativeMonths.length > 3 ? '…' : ''}`}
+                        .join(', ')}${tightMonths.length > 3 ? '…' : ''}`}
                 </Text>
               </Card>
             ) : null}
@@ -166,13 +153,13 @@ export default function FutureScreen() {
             <SectionHeader title="Mês a mês" />
 
             <Card padded={false}>
-              {projection.map((month, index) => (
+              {wealth.months.map((month, index) => (
                 <Pressable
                   key={month.competence}
                   accessibilityRole="button"
-                  accessibilityLabel={`${formatMonthShort(month.competence)}, saldo ${formatMoney(
-                    month.balance,
-                  )}, acumulado ${formatMoney(month.accumulated)}`}
+                  accessibilityLabel={`${formatMonthShort(month.competence)}, aporte ${formatMoney(
+                    month.contributed,
+                  )}, rendimento ${formatMoney(month.yield)}, total ${formatMoney(month.invested)}`}
                   onPress={() => goToMonth(month.competence)}
                   style={({ pressed }) => [
                     styles.monthRow,
@@ -180,25 +167,38 @@ export default function FutureScreen() {
                     pressed ? styles.pressed : null,
                   ]}
                 >
-                  <View style={styles.monthLabel}>
-                    {month.balance < 0 ? (
-                      <Ionicons name="alert-circle" size={14} color={colors.negative} />
-                    ) : null}
-                    <Text variant="body">{formatMonthShort(month.competence)}</Text>
-                  </View>
+                  <Text variant="body" style={styles.monthLabel}>
+                    {formatMonthShort(month.competence)}
+                  </Text>
 
                   <View style={styles.monthValues}>
-                    <Money value={month.balance} variant="body" colorBySign showSign />
-                    <Text variant="micro" tone="faint">
-                      acum.
-                    </Text>
-                    <Money value={month.accumulated} variant="caption" color={colors.textMuted} />
+                    <Money
+                      value={month.contributed}
+                      variant="caption"
+                      color={colors.textMuted}
+                      showSign
+                    />
+                    <Money value={month.yield} variant="caption" color={colors.positive} showSign />
                   </View>
+
+                  <Money value={month.invested} variant="body" color={colors.brandText} />
 
                   <Ionicons name="chevron-forward" size={14} color={colors.textFaint} />
                 </Pressable>
               ))}
             </Card>
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Ver caixinhas"
+              onPress={() => router.push('/goals')}
+              style={styles.goalsLink}
+            >
+              <Ionicons name="albums-outline" size={14} color={colors.brandText} />
+              <Text variant="caption" tone="brand">
+                Ajustar aportes e rendimento nas caixinhas
+              </Text>
+            </Pressable>
           </>
         )}
       </ScrollView>
@@ -246,35 +246,29 @@ const useStyles = makeStyles((colors) => ({
     borderRadius: radius.pill,
     backgroundColor: colors.surface,
   },
-  chartCard: {
+  heroCard: {
     gap: spacing.lg,
   },
-  wealthBreakdown: {
+  contributionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  breakdown: {
     gap: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     paddingTop: spacing.md,
   },
-  wealthRow: {
+  breakdownRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  wealthLabel: {
+  yieldLabel: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-  },
-  goalsHint: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.brandDim,
-    borderRadius: radius.md,
-    padding: spacing.md,
-  },
-  goalsHintText: {
-    flex: 1,
   },
   warningCard: {
     flexDirection: 'row',
@@ -298,19 +292,20 @@ const useStyles = makeStyles((colors) => ({
     borderTopColor: colors.border,
   },
   monthLabel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    width: 84,
+    width: 64,
   },
   monthValues: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: spacing.sm,
+    alignItems: 'flex-end',
   },
   pressed: {
     backgroundColor: colors.cardElevated,
+  },
+  goalsLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: 44,
   },
 }));

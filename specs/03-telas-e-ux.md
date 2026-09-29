@@ -112,17 +112,33 @@ As barras de status e de navegação do Android seguem o tema.
 **Vazio**: ilustração discreta, "Nenhum lançamento em setembro" e um botão
 "Adicionar o primeiro".
 
+## Splash e ícone
+
+O `splash` do `app.json` **foi descontinuado** e é silenciosamente ignorado — o
+build sai com fundo branco e o ícone padrão do Expo. A configuração que vale é
+o plugin `expo-splash-screen`. Conferir no recurso gerado
+(`res/values/colors.xml`, `splashscreen_background`) é o único jeito de saber
+que pegou.
+
+O ícone é três barras ascendentes, brancas sobre o índigo da marca. Geométrico
+de propósito: escala bem de 48dp até 1024px sem virar borrão.
+
 ## Tela: Futuro
 
 ```
 ┌──────────────────────────────────────┐
 │  Futuro              12 meses ▾      │
 │                                      │
-│  Em 12 meses você junta              │
-│  R$ 28.400,00                        │
+│  ↻ Investindo R$ 1.500,00 por mês    │
+│                                      │
+│  Em 12 meses você terá               │
+│  R$ 19.240,00                        │
 │      ___________                     │
-│   __/           \___                 │  ← curva do acumulado, com a
-│  /          · · · · · ·              │    linha do zero pontilhada
+│   __/                                │  ← curva do patrimônio investido
+│  /                                   │
+│  ──────────────────────────────────  │
+│  Você aporta          R$ 18.000,00   │
+│  ↗ Rende               R$ 1.240,00   │
 │                                      │
 │  set 26  +2.340   acum.  2.340   ›   │
 │  out 26  +2.340   acum.  4.680   ›   │
@@ -132,11 +148,16 @@ As barras de status e de navegação do Android seguem o tema.
 └──────────────────────────────────────┘
 ```
 
-- Mês com saldo negativo vem em vermelho e com ícone de alerta — é o aviso
-  mais valioso da tela.
+O Futuro é sobre **investimento**, não sobre sobra de conta. O número grande é
+o patrimônio acumulado nas caixinhas, e o gráfico é a curva dele — com juros
+compostos, não soma simples.
+
+- O mês a mês mostra aporte, rendimento do mês e total acumulado.
 - Tocar num mês navega para ele na aba Mês.
-- O gráfico é do **acumulado**, não do saldo mensal: a pergunta é "quanto eu
-  junto", e isso é uma curva, não barras soltas.
+- Se o aporte planejado for maior que a sobra do mês, aparece um alerta. É a
+  única coisa que sobrou de "sobra na conta", e de propósito: planejar
+  R$ 1.500/mês quando sobram R$ 900 faz a projeção inteira virar ficção.
+- Sem caixinha, a tela convida a criar uma em vez de mostrar número vazio.
 
 ## Tela: Compromissos
 

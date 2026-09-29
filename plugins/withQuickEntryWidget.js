@@ -4,6 +4,7 @@ const path = require('path');
 
 const WIDGET_CLASS = 'QuickEntryWidget';
 const ACTIVITY_CLASS = 'QuickExpenseActivity';
+const CHOOSER_CLASS = 'QuickChooserActivity';
 const DB_RELATIVE_PATH = 'SQLite/meucaixa.db';
 
 const activityKotlin = (packageName) => `package ${packageName}
@@ -251,14 +252,13 @@ class ${ACTIVITY_CLASS} : Activity() {
 }
 `;
 
-const widgetKotlin = (packageName, scheme) => `package ${packageName}
+const widgetKotlin = (packageName) => `package ${packageName}
 
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.widget.RemoteViews
 
 class ${WIDGET_CLASS} : AppWidgetProvider() {
@@ -267,68 +267,157 @@ class ${WIDGET_CLASS} : AppWidgetProvider() {
         appWidgetManager: AppWidgetManager,
         appWidgetIds: IntArray
     ) {
-        val quickIntent = Intent(context, ${ACTIVITY_CLASS}::class.java).apply {
+        val intent = Intent(context, ${CHOOSER_CLASS}::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         }
 
-        val quick = PendingIntent.getActivity(
+        val pending = PendingIntent.getActivity(
             context,
             1,
-            quickIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val scanIntent = Intent(Intent.ACTION_VIEW, Uri.parse("${scheme}://scan")).apply {
-            setPackage(context.packageName)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
-        }
-
-        val scan = PendingIntent.getActivity(
-            context,
-            2,
-            scanIntent,
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         appWidgetIds.forEach { widgetId ->
             val views = RemoteViews(context.packageName, R.layout.quick_entry_widget)
-            views.setOnClickPendingIntent(R.id.widget_button, quick)
-            views.setOnClickPendingIntent(R.id.widget_scan, scan)
+            views.setOnClickPendingIntent(R.id.widget_button, pending)
             appWidgetManager.updateAppWidget(widgetId, views)
         }
     }
 }
 `;
 
+const chooserKotlin = (packageName, scheme) => `package ${packageName}
+
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.os.Bundle
+import android.view.View
+
+class ${CHOOSER_CLASS} : Activity() {
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.quick_chooser)
+        setFinishOnTouchOutside(true)
+
+        findViewById<View>(R.id.chooser_entry).setOnClickListener {
+            startActivity(Intent(this, ${ACTIVITY_CLASS}::class.java))
+            finish()
+        }
+
+        findViewById<View>(R.id.chooser_scan).setOnClickListener {
+            startActivity(
+                Intent(Intent.ACTION_VIEW, Uri.parse("${scheme}://scan")).apply {
+                    setPackage(packageName)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                }
+            )
+            finish()
+        }
+    }
+}
+`;
+
 const widgetLayout = `<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="horizontal">
+    android:padding="2dp">
 
     <TextView
         android:id="@+id/widget_button"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_weight="1"
-        android:layout_marginEnd="6dp"
         android:gravity="center"
-        android:text="+  Lançar"
-        android:textColor="#E8EEF5"
-        android:textSize="15sp"
+        android:text="+"
+        android:textColor="#FFFFFF"
+        android:textSize="26sp"
         android:textStyle="bold"
+        android:contentDescription="@string/quick_entry_widget_description"
         android:background="@drawable/quick_entry_widget_background" />
+</FrameLayout>
+`;
 
-    <TextView
-        android:id="@+id/widget_scan"
-        android:layout_width="56dp"
-        android:layout_height="match_parent"
+const chooserLayout = `<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:padding="20dp"
+    android:background="@drawable/quick_expense_background">
+
+    <LinearLayout
+        android:id="@+id/chooser_entry"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
         android:gravity="center"
-        android:text="\\uD83D\\uDCF7"
-        android:textSize="20sp"
-        android:contentDescription="@string/quick_entry_scan_description"
-        android:background="@drawable/quick_entry_scan_background" />
+        android:paddingVertical="18dp"
+        android:layout_marginEnd="8dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="@drawable/quick_chooser_item">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="+"
+            android:textColor="#C7D2FE"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Gasto"
+            android:textColor="#8A9AAD"
+            android:textSize="13sp"
+            android:layout_marginTop="6dp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/chooser_scan"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:paddingVertical="18dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="@drawable/quick_chooser_item">
+
+        <ImageView
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/quick_chooser_camera"
+            android:contentDescription="@string/quick_entry_scan_description" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Nota"
+            android:textColor="#8A9AAD"
+            android:textSize="13sp"
+            android:layout_marginTop="6dp" />
+    </LinearLayout>
 </LinearLayout>
+`;
+
+const cameraVector = `<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#C7D2FE">
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M9,2L7.17,4H4C2.9,4 2,4.9 2,6v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V6c0,-1.1 -0.9,-2 -2,-2h-3.17L15,2H9zM12,17c-2.76,0 -5,-2.24 -5,-5s2.24,-5 5,-5 5,2.24 5,5 -2.24,5 -5,5zM12,9c-1.66,0 -3,1.34 -3,3s1.34,3 3,3 3,-1.34 3,-3 -1.34,-3 -3,-3z" />
+</vector>
 `;
 
 const dialogLayout = `<?xml version="1.0" encoding="utf-8"?>
@@ -491,9 +580,12 @@ const withNativeFiles = (config) =>
       const scheme = Array.isArray(mod.scheme) ? mod.scheme[0] : mod.scheme;
       if (!scheme) throw new Error('withQuickEntryWidget: scheme não definido');
 
-      writeFile(path.join(javaDir, `${WIDGET_CLASS}.kt`), widgetKotlin(packageName, scheme));
+      writeFile(path.join(javaDir, `${WIDGET_CLASS}.kt`), widgetKotlin(packageName));
+      writeFile(path.join(javaDir, `${CHOOSER_CLASS}.kt`), chooserKotlin(packageName, scheme));
 
       writeFile(path.join(main, 'res/layout/quick_entry_widget.xml'), widgetLayout);
+      writeFile(path.join(main, 'res/layout/quick_chooser.xml'), chooserLayout);
+      writeFile(path.join(main, 'res/drawable/quick_chooser_camera.xml'), cameraVector);
       writeFile(path.join(main, 'res/layout/quick_expense_dialog.xml'), dialogLayout);
       writeFile(path.join(main, 'res/layout/quick_expense_spinner_item.xml'), spinnerItem('4dp'));
       writeFile(path.join(main, 'res/layout/quick_expense_spinner_dropdown.xml'), spinnerItem('16dp'));
@@ -502,11 +594,11 @@ const withNativeFiles = (config) =>
         path.join(main, 'res/xml/quick_entry_widget_info.xml'),
         `<?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    android:minWidth="180dp"
+    android:minWidth="40dp"
     android:minHeight="40dp"
-    android:targetCellWidth="3"
+    android:targetCellWidth="1"
     android:targetCellHeight="1"
-    android:resizeMode="horizontal"
+    android:resizeMode="none"
     android:widgetCategory="home_screen"
     android:initialLayout="@layout/quick_entry_widget"
     android:previewLayout="@layout/quick_entry_widget"
@@ -517,11 +609,11 @@ const withNativeFiles = (config) =>
 
       writeFile(
         path.join(main, 'res/drawable/quick_entry_widget_background.xml'),
-        shape('#6366F1', '#818CF8', '18dp'),
+        shape('#6366F1', '#818CF8', '20dp'),
       );
       writeFile(
-        path.join(main, 'res/drawable/quick_entry_scan_background.xml'),
-        shape('#151B23', '#253040', '18dp'),
+        path.join(main, 'res/drawable/quick_chooser_item.xml'),
+        shape('#0B0F14', '#253040', '18dp'),
       );
       writeFile(
         path.join(main, 'res/drawable/quick_expense_background.xml'),
@@ -547,7 +639,7 @@ const withNativeFiles = (config) =>
           stringsPath,
           strings.replace(
             '</resources>',
-            '  <string name="quick_entry_widget_description">Lançar um gasto ou fotografar a nota</string>\n' +
+            '  <string name="quick_entry_widget_description">Lançar gasto ou nota fiscal</string>\n' +
               '  <string name="quick_entry_scan_description">Fotografar nota fiscal</string>\n</resources>',
           ),
         );
@@ -567,20 +659,24 @@ const withManifestEntries = (config) =>
   withAndroidManifest(config, (mod) => {
     const application = AndroidConfig.Manifest.getMainApplicationOrThrow(mod.modResults);
 
+    const dialogActivities = [ACTIVITY_CLASS, CHOOSER_CLASS];
+
     application.activity = (application.activity ?? []).filter(
-      (item) => item.$?.['android:name'] !== `.${ACTIVITY_CLASS}`,
+      (item) => !dialogActivities.some((name) => item.$?.['android:name'] === `.${name}`),
     );
 
-    application.activity.push({
-      $: {
-        'android:name': `.${ACTIVITY_CLASS}`,
-        'android:exported': 'false',
-        'android:theme': '@style/Theme.QuickExpense',
-        'android:excludeFromRecents': 'true',
-        'android:noHistory': 'true',
-        'android:launchMode': 'singleTop',
-      },
-    });
+    for (const name of dialogActivities) {
+      application.activity.push({
+        $: {
+          'android:name': `.${name}`,
+          'android:exported': 'false',
+          'android:theme': '@style/Theme.QuickExpense',
+          'android:excludeFromRecents': 'true',
+          'android:noHistory': 'true',
+          'android:launchMode': 'singleTop',
+        },
+      });
+    }
 
     application.receiver = (application.receiver ?? []).filter(
       (item) => item.$?.['android:name'] !== `.${WIDGET_CLASS}`,

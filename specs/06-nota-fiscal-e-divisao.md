@@ -183,26 +183,30 @@ sobra de centavos indo para o primeiro — mesma regra de `splitInstallments`.
 
 ## Widget
 
-O widget passa a ter **dois botões**:
+O widget é **do tamanho de um ícone** (1×1) e abre um seletor com as duas
+formas de lançar:
 
 ```
-┌──────────────────────────────┐
-│  Meu Caixa                   │
-│  ┌────────────┬───────────┐  │
-│  │  + Lançar  │    📷     │  │
-│  └────────────┴───────────┘  │
-└──────────────────────────────┘
+tela inicial          ao tocar
+┌────┐          ┌──────────────────┐
+│ +  │          │   +        📷    │
+└────┘          │ Gasto     Nota   │
+                └──────────────────┘
 ```
 
-| Botão | O que faz |
+| Opção | O que faz |
 | --- | --- |
-| **+ Lançar** | Abre a telinha nativa de gasto rápido, sem carregar o app |
-| **📷** | Abre o app direto na câmera |
+| **Gasto** | Telinha nativa de gasto rápido, sem carregar o app |
+| **Nota** | Abre o app direto na câmera |
 
-A assimetria é intencional. O lançamento rápido é Kotlin puro e instantâneo; a
-foto precisa de câmera, reconhecimento e uma tela de conferência com itens —
-isso é React Native e exige o app aberto. Fingir o contrário só deixaria o
-botão lento sem motivo.
+O seletor também é nativo, então aparece instantâneo. O custo é um toque a mais
+para o gasto rápido — foi o preço de caber num ícone em vez de ocupar meia tela
+inicial.
+
+A assimetria entre as duas opções é intencional. O lançamento rápido é Kotlin
+puro; a foto precisa de câmera, reconhecimento e conferência de itens — isso é
+React Native e exige o app aberto. Fingir o contrário deixaria o botão lento
+sem motivo.
 
 ## Etapas
 
