@@ -14,7 +14,7 @@ import {
   setStatus,
 } from '@/repositories/occurrences';
 import { useAppStore } from '@/stores/app';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors , useTint } from '@/theme';
 import { formatDateBR, formatMonthLong } from '@/utils/date';
 import { appendDigit, formatMoney, removeDigit } from '@/utils/money';
 import { Button } from '@/ui/Button';
@@ -31,6 +31,9 @@ const TYPE_LABELS: Record<OccurrenceView['commitmentType'], string> = {
 };
 
 export default function OccurrenceScreen() {
+  const tint = useTint();
+  const styles = useStyles();
+  const colors = useColors();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const bumpRevision = useAppStore((state) => state.bumpRevision);
@@ -141,7 +144,7 @@ export default function OccurrenceScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={styles.hero}>
-          <View style={[styles.icon, { backgroundColor: `${iconColor}22` }]}>
+          <View style={[styles.icon, { backgroundColor: tint(iconColor) }]}>
             <Ionicons name={iconName} size={26} color={iconColor} />
           </View>
 
@@ -252,6 +255,8 @@ function DetailRow({
   value: string;
   bordered?: boolean;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <View style={[styles.detailRow, bordered ? styles.bordered : null]}>
       <Text variant="body" tone="muted">
@@ -262,7 +267,7 @@ function DetailRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -325,4 +330,4 @@ const styles = StyleSheet.create({
   statusActions: {
     gap: spacing.md,
   },
-});
+}));

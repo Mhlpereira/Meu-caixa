@@ -8,7 +8,7 @@ import { updateProfile } from '@/repositories/profiles';
 import { setPin } from '@/services/security';
 import { useAppStore } from '@/stores/app';
 import { useLockStore } from '@/stores/lock';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
 import { currentCompetence, dueDateIn } from '@/utils/date';
 import { appendDigit, formatMoney, removeDigit } from '@/utils/money';
 import { Button } from '@/ui/Button';
@@ -23,6 +23,8 @@ type Step = 'profiles' | 'income' | 'security';
 const STEPS: Step[] = ['profiles', 'income', 'security'];
 
 export function OnboardingScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const profiles = useAppStore((state) => state.profiles);
   const refreshProfiles = useAppStore((state) => state.refreshProfiles);
   const setOnboardingDone = useAppStore((state) => state.setOnboardingDone);
@@ -90,6 +92,7 @@ export function OnboardingScreen() {
         dayOfMonth: day,
         notes: null,
         isInvestment: false,
+        goalId: null,
       });
     }
 
@@ -273,6 +276,8 @@ function StepHeader({
   title: string;
   description: string;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <View style={styles.header}>
       <View style={styles.headerIcon}>
@@ -288,7 +293,7 @@ function StepHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   progress: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -355,4 +360,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand,
     borderColor: colors.brand,
   },
-});
+}));

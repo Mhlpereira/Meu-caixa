@@ -124,6 +124,32 @@ Cada item é verificável no app rodando. A v1 está pronta quando todos passam.
 - [ ] **D4** Importar backup de versão desconhecida é recusado com mensagem.
 - [ ] **D5** Nenhum valor monetário sofre erro de arredondamento (tudo em centavos).
 
+## Temas
+
+- [ ] **A1** Trocar o tema muda a tela na hora, sem reiniciar.
+- [ ] **A2** O tema escolhido sobrevive a fechar e reabrir o app.
+- [ ] **A3** No tema claro, as barras do Android ficam com ícones escuros.
+- [ ] **A4** Nenhuma tela mantém cor presa do tema anterior.
+- [ ] **A5** Todo texto passa de 4,5:1 de contraste sobre o fundo dele.
+
+## Boot
+
+- [ ] **O1** App com banco da v1, v2 ou v3 abre sem erro e com os dados.
+- [ ] **O2** Instalação nova abre no onboarding.
+- [ ] **O3** Falha no boot mostra tela de erro com o motivo, não spinner infinito.
+- [ ] **O4** "Tentar de novo" refaz o boot sem fechar o app.
+
+## Divisão de conta
+
+- [ ] **S1** O botão da câmera no widget abre o app na câmera.
+- [ ] **S2** QR de NFC-e preenche o total automaticamente.
+- [ ] **S3** Sem QR, dá para digitar o valor e seguir.
+- [ ] **S4** Adicionar apelidos divide a conta igualmente entre eles.
+- [ ] **S5** Dividir R$ 100 entre 3 não perde centavo.
+- [ ] **S6** Só a sua parte é lançada como despesa.
+- [ ] **S7** O que os outros devem **não** entra como receita prevista.
+- [ ] **S8** Remover um participante recalcula as partes na hora.
+
 ## Qualidade
 
 - [ ] **Q1** `npx tsc --noEmit` passa sem erro.

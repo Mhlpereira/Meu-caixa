@@ -11,7 +11,7 @@ import { useMonth, type MonthFilter } from '@/hooks/useMonth';
 import { deleteCommitment, extendRecurringHorizon } from '@/repositories/commitments';
 import { deleteOccurrence, togglePaid } from '@/repositories/occurrences';
 import { useAppStore } from '@/stores/app';
-import { balanceColor, colors, radius, spacing } from '@/theme';
+import { balanceColor, makeStyles, radius, spacing, useColors } from '@/theme';
 import { currentCompetence, formatDayHeader, formatMonthLong } from '@/utils/date';
 import { formatMoney } from '@/utils/money';
 import { Card } from '@/ui/Card';
@@ -33,6 +33,8 @@ const FILTER_LABELS: Record<MonthFilter, string> = {
 };
 
 export default function MonthScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const router = useRouter();
 
   const competence = useAppStore((state) => state.competence);
@@ -175,7 +177,7 @@ export default function MonthScreen() {
               <Money
                 value={summary.balanceActual}
                 variant="caption"
-                color={balanceColor(summary.balanceActual)}
+                color={balanceColor(summary.balanceActual, colors)}
               />
             </View>
           ) : null}
@@ -190,7 +192,7 @@ export default function MonthScreen() {
             <Text variant="micro" tone="muted">
               {summary.incomePlanned > 0
                 ? `${Math.round((summary.committed / summary.incomePlanned) * 100)}% do que entra`
-                : 'fixos e parcelas'}
+                : 'fixos, parcelas e aportes'}
             </Text>
           </Card>
 
@@ -356,7 +358,7 @@ export default function MonthScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   header: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
@@ -427,4 +429,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexWrap: 'wrap',
   },
-});
+}));

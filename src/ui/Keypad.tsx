@@ -2,7 +2,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing, typography } from '@/theme';
+import { makeStyles, radius, spacing, typography, useColors } from '@/theme';
 
 import { Text } from './Text';
 
@@ -18,6 +18,8 @@ export interface KeypadProps {
 const DIGITS = ['1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
 export function Keypad({ onDigit, onBackspace, leftAction, compact = false }: KeypadProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const press = (action: () => void) => () => {
     Haptics.selectionAsync().catch(() => undefined);
     action();
@@ -73,7 +75,7 @@ export function Keypad({ onDigit, onBackspace, leftAction, compact = false }: Ke
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -99,4 +101,4 @@ const styles = StyleSheet.create({
   pressed: {
     backgroundColor: colors.cardElevated,
   },
-});
+}));

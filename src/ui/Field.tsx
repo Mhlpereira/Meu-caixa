@@ -9,7 +9,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, radius, spacing, typography } from '@/theme';
+import { makeStyles, radius, spacing, typography, useColors } from '@/theme';
 
 import { Text } from './Text';
 
@@ -22,6 +22,7 @@ export interface FieldProps {
 }
 
 export function Field({ label, children, hint, error, style }: FieldProps) {
+  const styles = useStyles();
   return (
     <View style={[styles.field, style]}>
       <Text variant="label" tone="muted">
@@ -46,6 +47,8 @@ export interface InputProps extends TextInputProps {
 }
 
 export function Input({ invalid = false, style, ...rest }: InputProps) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <TextInput
       {...rest}
@@ -72,6 +75,8 @@ export function Select({
   iconColor,
   invalid = false,
 }: SelectProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const empty = value.length === 0;
 
   return (
@@ -97,7 +102,7 @@ export function Select({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   field: {
     gap: spacing.sm,
   },
@@ -130,4 +135,4 @@ const styles = StyleSheet.create({
   pressed: {
     backgroundColor: colors.cardElevated,
   },
-});
+}));

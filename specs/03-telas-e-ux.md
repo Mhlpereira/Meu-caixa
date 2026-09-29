@@ -11,27 +11,53 @@
    ├─ Compromissos (tab 3)  parcelas em aberto + gastos fixos
    ├─ Ajustes      (tab 4)  perfis, categorias, segurança, backup
    ├─ [modal] Novo / editar lançamento
+   ├─ [modal] Lançamento rápido      ← tipo, valor, observação
+   ├─ [tela]  Câmera (nota fiscal)   ← lê QR, vai para a divisão
+   ├─ [modal] Dividir a conta        ← apelidos, rateio, sua parte
    ├─ [modal] Detalhe da ocorrência
+   ├─ [modal] Caixinhas
    └─ [modal] Seletor de perfil
 ```
+
+Fora do React, no Android: o **widget** de tela inicial com dois botões, e a
+**telinha nativa** de gasto rápido que ele abre. Ver [06](06-nota-fiscal-e-divisao.md#widget).
 
 O botão flutuante **+** fica sobre as tabs 1–3.
 
 ## Sistema visual
 
-Tema escuro por padrão, com claro disponível. Escuro porque o app se olha de
-noite, na cama, revisando o mês — e porque números coloridos brilham mais sobre
-fundo escuro.
+Três temas, trocáveis em Ajustes › Aparência e salvos em `settings.theme`.
 
+| Tema | Quando | Fundo |
+| --- | --- | --- |
+| **Neon** (padrão) | uso normal, à noite | azul profundo `#0B0F14` |
+| **Escuro** | quem prefere preto neutro | `#0A0A0A` |
+| **Claro** | sol, tela clara | `#F5F6F8` |
+
+Neon é o padrão porque o app se olha de noite, revisando o mês, e número
+colorido brilha mais sobre fundo escuro.
+
+**Todo par cor/fundo é medido antes de entrar.** Texto precisa de 4,5:1;
+elemento gráfico, 3:1. Foi assim que se descobriu que o texto apagado original
+(`#5B6B7E`) tinha 2,94:1 sobre os cartões — reprovado até para texto grande.
+
+No tema claro os tons vibrantes não servem: `#34D399` sobre branco dá 1,9:1.
+Por isso o claro usa verde `#047857` (5,48:1) e vermelho `#B91C1C` (6,47:1).
+
+### Como o tema chega na tela
+
+`StyleSheet.create` captura as cores **uma vez**, quando o módulo carrega —
+trocar de tema não mudaria nada. Por isso os estilos são função do tema:
+
+```ts
+const useStyles = makeStyles((colors) => ({ card: { backgroundColor: colors.card } }));
 ```
-Fundo          #0B0F14   superfície elevada  #151B23
-Cartão         #1A222D   borda               #253040
-Texto          #E8EEF5   texto fraco         #8A9AAD
-Positivo       #34D399   receita, saldo bom
-Negativo       #F87171   despesa, saldo ruim
-Atenção        #FBBF24   vence em breve
-Marca          #6366F1   ação primária, seleção
-```
+
+`makeStyles` memoriza um conjunto de estilos por tema. Cor usada direto no JSX
+vem de `useColors()`. Fundo translúcido de ícone vem de `useTint()`, que ajusta
+a opacidade — `${cor}22` funciona no escuro e some no claro.
+
+As barras de status e de navegação do Android seguem o tema.
 
 - Raio de canto: 16 em cartões, 12 em campos, 999 em pílulas.
 - Espaçamento em múltiplos de 4; respiro padrão de 16 nas bordas da tela.

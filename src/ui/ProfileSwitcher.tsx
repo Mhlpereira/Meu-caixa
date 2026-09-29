@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { ALL_PROFILES } from '@/domain/types';
 import { useAppStore } from '@/stores/app';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
 
 import { Sheet, SheetOption } from './Sheet';
 import { Text } from './Text';
@@ -14,6 +14,8 @@ export interface ProfileSwitcherProps {
 }
 
 export function ProfileSwitcher({ onOpenSettings }: ProfileSwitcherProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const profiles = useAppStore((state) => state.profiles);
   const scope = useAppStore((state) => state.scope);
   const setScope = useAppStore((state) => state.setScope);
@@ -79,7 +81,7 @@ export function ProfileSwitcher({ onOpenSettings }: ProfileSwitcherProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -111,4 +113,4 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.7,
   },
-});
+}));

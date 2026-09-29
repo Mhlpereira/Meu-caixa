@@ -3,11 +3,13 @@ import { Tabs } from 'expo-router';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, typography } from '@/theme';
+import { makeStyles, typography, useColors } from '@/theme';
 
 const BAR_HEIGHT = 62;
 
 export default function TabsLayout() {
+  const styles = useStyles();
+  const colors = useColors();
   const insets = useSafeAreaInsets();
 
   return (
@@ -57,7 +59,7 @@ export default function TabsLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   bar: {
     backgroundColor: colors.surface,
     borderTopColor: colors.border,
@@ -68,4 +70,4 @@ const styles = StyleSheet.create({
   item: {
     paddingTop: 2,
   },
-});
+}));

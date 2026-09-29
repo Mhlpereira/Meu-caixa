@@ -13,7 +13,7 @@ import {
   verifyPin,
 } from '@/services/security';
 import { useLockStore } from '@/stores/lock';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
 
 function formatCountdown(ms: number): string {
   const totalSeconds = Math.ceil(ms / 1000);
@@ -23,6 +23,8 @@ function formatCountdown(ms: number): string {
 }
 
 export function LockScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const unlock = useLockStore((state) => state.unlock);
   const biometricsEnabled = useLockStore((state) => state.biometricsEnabled);
   const biometricsLabel = useLockStore((state) => state.biometricsLabel);
@@ -173,7 +175,7 @@ export function LockScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   screen: {
     justifyContent: 'space-between',
     paddingVertical: spacing.xxl,
@@ -212,4 +214,4 @@ const styles = StyleSheet.create({
   keypad: {
     paddingBottom: spacing.xl,
   },
-});
+}));

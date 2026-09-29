@@ -44,6 +44,7 @@ export interface Commitment {
   dayOfMonth: number | null;
   notes: string | null;
   isInvestment: boolean;
+  goalId: string | null;
   archived: boolean;
   createdAt: string;
   updatedAt: string;
@@ -62,6 +63,7 @@ export interface Occurrence {
   paidAt: string | null;
   isOverridden: boolean;
   isInvestment: boolean;
+  goalId: string | null;
 }
 
 export interface OccurrenceView extends Occurrence {
@@ -137,4 +139,5 @@ export interface CommitmentInput {
   dayOfMonth: number | null;
   notes: string | null;
   isInvestment: boolean;
+  goalId: string | null;
 }

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
-import { colors, radius, spacing, typography } from '@/theme';
+import { makeStyles, radius, spacing, typography, useColors, type ThemeColors } from '@/theme';
 
 import { Text } from './Text';
 
@@ -20,18 +20,30 @@ export interface ButtonProps {
   style?: ViewStyle;
 }
 
-const BACKGROUNDS: Record<Variant, string> = {
-  primary: colors.brand,
-  secondary: colors.cardElevated,
-  ghost: 'transparent',
-  danger: colors.negativeDim,
+const background = (variant: Variant, colors: ThemeColors): string => {
+  switch (variant) {
+    case 'primary':
+      return colors.brand;
+    case 'secondary':
+      return colors.cardElevated;
+    case 'danger':
+      return colors.negativeDim;
+    default:
+      return 'transparent';
+  }
 };
 
-const FOREGROUNDS: Record<Variant, string> = {
-  primary: '#FFFFFF',
-  secondary: colors.text,
-  ghost: colors.textMuted,
-  danger: colors.negative,
+const foreground = (variant: Variant, colors: ThemeColors): string => {
+  switch (variant) {
+    case 'primary':
+      return colors.onBrand;
+    case 'secondary':
+      return colors.text;
+    case 'danger':
+      return colors.negative;
+    default:
+      return colors.textMuted;
+  }
 };
 
 export function Button({
@@ -45,8 +57,10 @@ export function Button({
   fullWidth = false,
   style,
 }: ButtonProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const inactive = disabled || loading;
-  const foreground = FOREGROUNDS[variant];
+  const tint = foreground(variant, colors);
 
   return (
     <Pressable
@@ -58,7 +72,7 @@ export function Button({
       style={({ pressed }) => [
         styles.base,
         size === 'lg' ? styles.large : styles.medium,
-        { backgroundColor: BACKGROUNDS[variant] },
+        { backgroundColor: background(variant, colors) },
         variant === 'ghost' ? styles.ghostBorder : null,
         fullWidth ? styles.fullWidth : null,
         pressed ? styles.pressed : null,
@@ -67,18 +81,18 @@ export function Button({
       ]}
     >
       {loading ? (
-        <ActivityIndicator color={foreground} size="small" />
+        <ActivityIndicator color={tint} size="small" />
       ) : (
         <View style={styles.content}>
-          {icon ? <Ionicons name={icon} size={18} color={foreground} /> : null}
-          <Text style={[typography.label, { color: foreground }]}>{label}</Text>
+          {icon ? <Ionicons name={icon} size={18} color={tint} /> : null}
+          <Text style={[typography.label, { color: tint }]}>{label}</Text>
         </View>
       )}
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   base: {
     borderRadius: radius.md,
     alignItems: 'center',
@@ -110,4 +124,4 @@ const styles = StyleSheet.create({
   disabled: {
     opacity: 0.4,
   },
-});
+}));

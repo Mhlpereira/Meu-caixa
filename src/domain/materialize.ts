@@ -40,6 +40,7 @@ function sharedFields(commitment: Commitment) {
     kind: commitment.kind,
     amount: commitment.amount,
     isInvestment: commitment.isInvestment,
+    goalId: commitment.goalId,
     status: 'pending' as const,
     paidAt: null,
     isOverridden: false,

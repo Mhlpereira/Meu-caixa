@@ -1,18 +1,27 @@
 import { Text as RNText, type TextProps, type TextStyle } from 'react-native';
 
-import { colors, typography } from '@/theme';
+import { typography, useColors, type ThemeColors } from '@/theme';
 
 type Variant = keyof typeof typography;
 type Tone = 'default' | 'muted' | 'faint' | 'positive' | 'negative' | 'warning' | 'brand';
 
-const TONE_COLORS: Record<Tone, string> = {
-  default: colors.text,
-  muted: colors.textMuted,
-  faint: colors.textFaint,
-  positive: colors.positive,
-  negative: colors.negative,
-  warning: colors.warning,
-  brand: colors.brandText,
+const toneColor = (tone: Tone, colors: ThemeColors): string => {
+  switch (tone) {
+    case 'muted':
+      return colors.textMuted;
+    case 'faint':
+      return colors.textFaint;
+    case 'positive':
+      return colors.positive;
+    case 'negative':
+      return colors.negative;
+    case 'warning':
+      return colors.warning;
+    case 'brand':
+      return colors.brandText;
+    default:
+      return colors.text;
+  }
 };
 
 export interface AppTextProps extends TextProps {
@@ -30,12 +39,14 @@ export function Text({
   style,
   ...rest
 }: AppTextProps) {
+  const colors = useColors();
+
   return (
     <RNText
       {...rest}
       style={[
         typography[variant],
-        { color: color ?? TONE_COLORS[tone] },
+        { color: color ?? toneColor(tone, colors) },
         align ? { textAlign: align } : null,
         style,
       ]}

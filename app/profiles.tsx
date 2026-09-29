@@ -12,7 +12,7 @@ import {
   updateProfile,
 } from '@/repositories/profiles';
 import { useAppStore } from '@/stores/app';
-import { colors, palette, radius, spacing } from '@/theme';
+import { makeStyles, palette, radius, spacing, useColors , useTint } from '@/theme';
 import { appendDigit, removeDigit } from '@/utils/money';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
@@ -37,6 +37,9 @@ const ICONS: Array<keyof typeof Ionicons.glyphMap> = [
 ];
 
 export default function ProfilesScreen() {
+  const tint = useTint();
+  const styles = useStyles();
+  const colors = useColors();
   const router = useRouter();
 
   const profiles = useAppStore((state) => state.profiles);
@@ -153,7 +156,7 @@ export default function ProfilesScreen() {
         <Card padded={false}>
           {profiles.map((profile, index) => (
             <View key={profile.id} style={[styles.row, index > 0 ? styles.bordered : null]}>
-              <View style={[styles.icon, { backgroundColor: `${profile.color}22` }]}>
+              <View style={[styles.icon, { backgroundColor: tint(profile.color) }]}>
                 <Ionicons
                   name={profile.icon as keyof typeof Ionicons.glyphMap}
                   size={18}
@@ -288,7 +291,7 @@ export default function ProfilesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -377,4 +380,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-});
+}));

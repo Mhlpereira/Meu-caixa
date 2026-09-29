@@ -8,7 +8,8 @@ export type SettingKey =
   | 'onboarding_done'
   | 'schema_version'
   | 'backup_folder_uri'
-  | 'backup_last_at';
+  | 'backup_last_at'
+  | 'theme';
 
 export async function getSetting(key: SettingKey): Promise<string | null> {
   const db = await getDb();

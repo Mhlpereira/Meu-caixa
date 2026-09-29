@@ -11,7 +11,7 @@ import {
   updateCommitment,
 } from '@/repositories/commitments';
 import { useAppStore } from '@/stores/app';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
 import {
   addMonths,
   competenceOf,
@@ -51,12 +51,15 @@ function defaultStartDate(competence: Competence): ISODate {
 }
 
 export default function EntryScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
   const editingId = typeof params.id === 'string' ? params.id : null;
 
   const profiles = useAppStore((state) => state.profiles);
   const categories = useAppStore((state) => state.categories);
+  const goals = useAppStore((state) => state.goals);
   const scope = useAppStore((state) => state.scope);
   const competence = useAppStore((state) => state.competence);
   const bumpRevision = useAppStore((state) => state.bumpRevision);
@@ -77,6 +80,8 @@ export default function EntryScreen() {
   const [endDate, setEndDate] = useState<ISODate>(() => dueDateIn(addMonths(competence, 11), 1));
   const [notes, setNotes] = useState('');
   const [isInvestment, setIsInvestment] = useState(false);
+  const [goalId, setGoalId] = useState<string | null>(null);
+  const [goalSheet, setGoalSheet] = useState(false);
 
   const [categorySheet, setCategorySheet] = useState(false);
   const [profileSheet, setProfileSheet] = useState(false);
@@ -106,13 +111,15 @@ export default function EntryScreen() {
       if (commitment.endDate) setEndDate(commitment.endDate);
       setNotes(commitment.notes ?? '');
       setIsInvestment(commitment.isInvestment);
+      setGoalId(commitment.goalId);
       setLoaded(true);
     });
   }, [editingId]);
 
   useEffect(() => {
     if (kind === 'income' && isInvestment) setIsInvestment(false);
-  }, [kind, isInvestment]);
+    if (!isInvestment && goalId !== null) setGoalId(null);
+  }, [kind, isInvestment, goalId]);
 
   const availableCategories = useMemo(
     () => categories.filter((category) => category.kind === kind),
@@ -121,6 +128,8 @@ export default function EntryScreen() {
 
   const selectedCategory = availableCategories.find((category) => category.id === categoryId);
   const selectedProfile = profiles.find((profile) => profile.id === profileId);
+  const availableGoals = goals.filter((goal) => goal.profileId === profileId);
+  const selectedGoal = availableGoals.find((goal) => goal.id === goalId);
 
   useEffect(() => {
     if (categoryId && !availableCategories.some((category) => category.id === categoryId)) {
@@ -179,6 +188,7 @@ export default function EntryScreen() {
       dayOfMonth: type === 'recurring' ? day : null,
       notes: notes.trim() || null,
       isInvestment,
+      goalId: isInvestment ? goalId : null,
     };
 
     try {
@@ -311,6 +321,25 @@ export default function EntryScreen() {
               thumbColor={colors.text}
             />
           </View>
+        ) : null}
+
+        {isInvestment ? (
+          <Field
+            label="Caixinha"
+            hint={
+              availableGoals.length === 0
+                ? 'Você ainda não tem caixinhas. Crie uma em Ajustes › Caixinhas.'
+                : 'Onde esse aporte entra'
+            }
+          >
+            <Select
+              value={selectedGoal?.name ?? ''}
+              placeholder="Sem caixinha"
+              icon={(selectedGoal?.icon ?? 'albums-outline') as keyof typeof Ionicons.glyphMap}
+              iconColor={selectedGoal?.color}
+              onPress={() => setGoalSheet(true)}
+            />
+          </Field>
         ) : null}
 
         <Field label="Como se repete">
@@ -465,6 +494,31 @@ export default function EntryScreen() {
         ))}
       </Sheet>
 
+      <Sheet visible={goalSheet} title="Caixinha" onClose={() => setGoalSheet(false)}>
+        <SheetOption
+          label="Sem caixinha"
+          description="O aporte conta na meta, mas não entra numa caixinha"
+          selected={goalId === null}
+          onPress={() => {
+            setGoalId(null);
+            setGoalSheet(false);
+          }}
+        />
+        {availableGoals.map((goal) => (
+          <SheetOption
+            key={goal.id}
+            label={goal.name}
+            icon={goal.icon as keyof typeof Ionicons.glyphMap}
+            iconColor={goal.color}
+            selected={goalId === goal.id}
+            onPress={() => {
+              setGoalId(goal.id);
+              setGoalSheet(false);
+            }}
+          />
+        ))}
+      </Sheet>
+
       <Sheet visible={profileSheet} title="Perfil" onClose={() => setProfileSheet(false)}>
         {profiles.map((profile) => (
           <SheetOption
@@ -484,7 +538,7 @@ export default function EntryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -547,4 +601,4 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
-});
+}));

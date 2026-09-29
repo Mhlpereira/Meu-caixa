@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, spacing } from '@/theme';
+import { makeStyles, spacing, useColors } from '@/theme';
 
 import { Text } from './Text';
 
@@ -14,6 +14,7 @@ export interface ScreenProps {
 }
 
 export function Screen({ children, padded = true, withTopInset = true, style }: ScreenProps) {
+  const styles = useStyles();
   const insets = useSafeAreaInsets();
 
   return (
@@ -36,6 +37,8 @@ export interface SectionHeaderProps {
 }
 
 export function SectionHeader({ title, trailing }: SectionHeaderProps) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <View style={styles.sectionHeader}>
       <Text variant="micro" tone="faint">
@@ -47,7 +50,7 @@ export function SectionHeader({ title, trailing }: SectionHeaderProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   screen: {
     flex: 1,
     backgroundColor: colors.bg,
@@ -66,4 +69,4 @@ const styles = StyleSheet.create({
     height: StyleSheet.hairlineWidth,
     backgroundColor: colors.border,
   },
-});
+}));

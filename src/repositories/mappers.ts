@@ -34,6 +34,7 @@ export interface CommitmentRow {
   day_of_month: number | null;
   notes: string | null;
   is_investment: number;
+  goal_id: string | null;
   archived: number;
   created_at: string;
   updated_at: string;
@@ -52,6 +53,7 @@ export interface OccurrenceRow {
   paid_at: string | null;
   is_overridden: number;
   is_investment: number;
+  goal_id: string | null;
 }
 
 export interface OccurrenceViewRow extends OccurrenceRow {
@@ -100,6 +102,7 @@ export const toCommitment = (row: CommitmentRow): Commitment => ({
   dayOfMonth: row.day_of_month,
   notes: row.notes,
   isInvestment: row.is_investment === 1,
+  goalId: row.goal_id,
   archived: row.archived === 1,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -118,6 +121,7 @@ export const toOccurrence = (row: OccurrenceRow): Occurrence => ({
   paidAt: row.paid_at,
   isOverridden: row.is_overridden === 1,
   isInvestment: row.is_investment === 1,
+  goalId: row.goal_id,
 });
 
 export const toOccurrenceView = (row: OccurrenceViewRow): OccurrenceView => ({

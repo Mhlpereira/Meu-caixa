@@ -1,9 +1,11 @@
 import { create } from 'zustand';
 
+import type { Goal } from '@/domain/goals';
 import type { Category, Profile, Scope } from '@/domain/types';
 import { ALL_PROFILES } from '@/domain/types';
 import { listCategories } from '@/repositories/categories';
 import { extendRecurringHorizon } from '@/repositories/commitments';
+import { listGoals } from '@/repositories/goals';
 import { listProfiles } from '@/repositories/profiles';
 import { getSetting, setSetting } from '@/repositories/settings';
 import { runAutoBackup } from '@/services/autoBackup';
@@ -13,6 +15,7 @@ interface AppState {
   ready: boolean;
   profiles: Profile[];
   categories: Category[];
+  goals: Goal[];
   scope: Scope;
   competence: Competence;
   revision: number;
@@ -21,6 +24,7 @@ interface AppState {
   bootstrap: () => Promise<void>;
   refreshProfiles: () => Promise<void>;
   refreshCategories: () => Promise<void>;
+  refreshGoals: () => Promise<void>;
   setScope: (scope: Scope) => Promise<void>;
   setCompetence: (competence: Competence) => void;
   bumpRevision: () => void;
@@ -31,15 +35,17 @@ export const useAppStore = create<AppState>((set, get) => ({
   ready: false,
   profiles: [],
   categories: [],
+  goals: [],
   scope: ALL_PROFILES,
   competence: currentCompetence(),
   revision: 0,
   onboardingDone: false,
 
   bootstrap: async () => {
-    const [profiles, categories, storedScope, onboarding] = await Promise.all([
+    const [profiles, categories, goals, storedScope, onboarding] = await Promise.all([
       listProfiles(),
       listCategories(),
+      listGoals(ALL_PROFILES),
       getSetting('active_profile_id'),
       getSetting('onboarding_done'),
     ]);
@@ -54,6 +60,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       ready: true,
       profiles,
       categories,
+      goals,
       scope: scopeIsValid && storedScope ? storedScope : (profiles[0]?.id ?? ALL_PROFILES),
       onboardingDone: onboarding === '1',
       revision: get().revision + 1,
@@ -74,6 +81,10 @@ export const useAppStore = create<AppState>((set, get) => ({
 
   refreshCategories: async () => {
     set({ categories: await listCategories() });
+  },
+
+  refreshGoals: async () => {
+    set({ goals: await listGoals(ALL_PROFILES) });
   },
 
   setScope: async (scope) => {

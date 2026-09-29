@@ -23,6 +23,7 @@ function view(overrides: Partial<OccurrenceView> = {}): OccurrenceView {
     paidAt: null,
     isOverridden: false,
     isInvestment: false,
+    goalId: null,
     description: 'Teste',
     commitmentType: 'single',
     installmentsTotal: null,
@@ -56,6 +57,51 @@ describe('summarizeMonth', () => {
     ]);
 
     expect(summary.committed).toBe(37_500);
+  });
+
+  it('aporte recorrente também é renda comprometida', () => {
+    const summary = summarizeMonth('2026-09', [
+      view({ amount: 5_500, commitmentType: 'recurring' }),
+      view({ amount: 150_000, commitmentType: 'recurring', isInvestment: true }),
+    ]);
+
+    expect(summary.committed).toBe(155_500);
+  });
+
+  it('aporte parcelado também entra no comprometido', () => {
+    const summary = summarizeMonth('2026-09', [
+      view({ amount: 40_000, commitmentType: 'installment', isInvestment: true }),
+    ]);
+
+    expect(summary.committed).toBe(40_000);
+  });
+
+  it('aporte avulso não entra no comprometido', () => {
+    const summary = summarizeMonth('2026-09', [
+      view({ amount: 90_000, commitmentType: 'single', isInvestment: true }),
+    ]);
+
+    expect(summary.committed).toBe(0);
+  });
+
+  it('comprometido soma investimento sem inflar as saídas', () => {
+    const summary = summarizeMonth('2026-09', [
+      view({ kind: 'income', amount: 900_000 }),
+      view({ amount: 300_000, commitmentType: 'recurring' }),
+      view({ amount: 150_000, commitmentType: 'recurring', isInvestment: true }),
+    ]);
+
+    expect(summary.expensePlanned).toBe(300_000);
+    expect(summary.committed).toBe(450_000);
+    expect(summary.free).toBe(450_000);
+  });
+
+  it('aporte pulado sai do comprometido', () => {
+    const summary = summarizeMonth('2026-09', [
+      view({ amount: 150_000, commitmentType: 'recurring', isInvestment: true, status: 'skipped' }),
+    ]);
+
+    expect(summary.committed).toBe(0);
   });
 
   it('tira ocorrências puladas de todas as somas', () => {

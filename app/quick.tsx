@@ -8,7 +8,7 @@ import type { Kind } from '@/domain/types';
 import { ALL_PROFILES } from '@/domain/types';
 import { createCommitment } from '@/repositories/commitments';
 import { useAppStore } from '@/stores/app';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
 import {
   competenceOf,
   currentCompetence,
@@ -42,10 +42,13 @@ function targetDate(competence: Competence): ISODate {
 }
 
 export default function QuickEntryScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const router = useRouter();
   const params = useLocalSearchParams<{ kind?: string }>();
 
   const profiles = useAppStore((state) => state.profiles);
+  const goals = useAppStore((state) => state.goals);
   const scope = useAppStore((state) => state.scope);
   const competence = useAppStore((state) => state.competence);
   const bumpRevision = useAppStore((state) => state.bumpRevision);
@@ -59,6 +62,8 @@ export default function QuickEntryScreen() {
   const [amount, setAmount] = useState(0);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
+  const [goalId, setGoalId] = useState<string | null>(null);
+  const [goalSheet, setGoalSheet] = useState(false);
 
   const profileId = scope === ALL_PROFILES ? (profiles[0]?.id ?? '') : scope;
   const profile = profiles.find((item) => item.id === profileId);
@@ -87,6 +92,7 @@ export default function QuickEntryScreen() {
       dayOfMonth: null,
       notes: null,
       isInvestment,
+      goalId: isInvestment ? goalId : null,
     });
 
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
@@ -206,7 +212,7 @@ export default function QuickEntryScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -254,4 +260,4 @@ const styles = StyleSheet.create({
     minHeight: 44,
     justifyContent: 'center',
   },
-});
+}));

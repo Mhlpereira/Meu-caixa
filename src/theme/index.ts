@@ -1,28 +1,12 @@
-export const colors = {
-  bg: '#0B0F14',
-  surface: '#151B23',
-  card: '#1A222D',
-  cardElevated: '#212B38',
-  border: '#253040',
-  borderStrong: '#31405433',
+import { StyleSheet, type ImageStyle, type TextStyle, type ViewStyle } from 'react-native';
+import { useMemo } from 'react';
 
-  text: '#E8EEF5',
-  textMuted: '#8A9AAD',
-  textFaint: '#5B6B7E',
+import { useThemeStore } from '@/stores/theme';
 
-  positive: '#34D399',
-  positiveDim: '#34D39922',
-  negative: '#F87171',
-  negativeDim: '#F8717122',
-  warning: '#FBBF24',
-  warningDim: '#FBBF2422',
+import { THEMES, type Theme, type ThemeColors, type ThemeName } from './themes';
 
-  brand: '#6366F1',
-  brandDim: '#6366F122',
-  brandText: '#C7D2FE',
-
-  overlay: '#000000AA',
-} as const;
+export { THEMES, THEME_ORDER, DEFAULT_THEME, isThemeName } from './themes';
+export type { Theme, ThemeColors, ThemeName } from './themes';
 
 export const palette = [
   '#6366F1',
@@ -30,12 +14,12 @@ export const palette = [
   '#EC4899',
   '#F43F5E',
   '#F97316',
-  '#FBBF24',
-  '#84CC16',
-  '#34D399',
-  '#14B8A6',
-  '#06B6D4',
-  '#3B82F6',
+  '#D97706',
+  '#65A30D',
+  '#059669',
+  '#0D9488',
+  '#0891B2',
+  '#2563EB',
   '#64748B',
 ] as const;
 
@@ -67,33 +51,72 @@ export const typography = {
   micro: { fontSize: 11, fontWeight: '600' as const, letterSpacing: 0.4 },
 } as const;
 
-export const moneyFont = {
-  fontVariant: ['tabular-nums'] as const,
-};
+export function useTheme(): Theme {
+  const name = useThemeStore((state) => state.name);
+  return THEMES[name];
+}
 
-export const shadow = {
-  card: {
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 4,
-  },
-  floating: {
-    shadowColor: '#000',
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 8,
-  },
-} as const;
+export function useColors(): ThemeColors {
+  return useTheme().colors;
+}
 
-export function balanceColor(cents: number): string {
+export function useShadows() {
+  const theme = useTheme();
+
+  return useMemo(
+    () => ({
+      card: {
+        shadowColor: '#000',
+        shadowOpacity: theme.shadowOpacity,
+        shadowRadius: 12,
+        shadowOffset: { width: 0, height: 4 },
+        elevation: 4,
+      },
+      floating: {
+        shadowColor: '#000',
+        shadowOpacity: theme.shadowOpacity + 0.1,
+        shadowRadius: 16,
+        shadowOffset: { width: 0, height: 6 },
+        elevation: 8,
+      },
+    }),
+    [theme],
+  );
+}
+
+type NamedStyles<T> = { [P in keyof T]: ViewStyle | TextStyle | ImageStyle };
+
+export function makeStyles<T extends NamedStyles<T>>(factory: (colors: ThemeColors) => T) {
+  const cache = new Map<ThemeName, T>();
+
+  return function useStyles(): T {
+    const name = useThemeStore((state) => state.name);
+
+    let cached = cache.get(name);
+    if (!cached) {
+      cached = StyleSheet.create(factory(THEMES[name].colors));
+      cache.set(name, cached);
+    }
+
+    return cached;
+  };
+}
+
+export function useTint(): (color: string) => string {
+  const theme = useTheme();
+
+  return useMemo(
+    () => (color: string) => `${color}${theme.dark ? '22' : '1F'}`,
+    [theme],
+  );
+}
+
+export function balanceColor(cents: number, colors: ThemeColors): string {
   if (cents > 0) return colors.positive;
   if (cents < 0) return colors.negative;
   return colors.textMuted;
 }
 
-export function kindColor(kind: 'income' | 'expense'): string {
+export function kindColor(kind: 'income' | 'expense', colors: ThemeColors): string {
   return kind === 'income' ? colors.positive : colors.negative;
 }

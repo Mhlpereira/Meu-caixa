@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors , useTint } from '@/theme';
 
 import { Text } from './Text';
 
@@ -15,6 +15,8 @@ export interface SheetProps {
 }
 
 export function Sheet({ visible, title, onClose, children }: SheetProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const insets = useSafeAreaInsets();
 
   return (
@@ -67,6 +69,9 @@ export function SheetOption({
   iconColor,
   onPress,
 }: SheetOptionProps) {
+  const tint = useTint();
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <Pressable
       accessibilityRole="button"
@@ -76,7 +81,7 @@ export function SheetOption({
       style={({ pressed }) => [styles.option, pressed ? styles.optionPressed : null]}
     >
       {icon ? (
-        <View style={[styles.optionIcon, { backgroundColor: `${iconColor ?? colors.brand}22` }]}>
+        <View style={[styles.optionIcon, { backgroundColor: tint(iconColor ?? colors.brand) }]}>
           <Ionicons name={icon} size={18} color={iconColor ?? colors.brand} />
         </View>
       ) : null}
@@ -95,7 +100,7 @@ export function SheetOption({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   backdrop: {
     position: 'absolute',
     top: 0,
@@ -162,4 +167,4 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 2,
   },
-});
+}));

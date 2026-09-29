@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
+import { useGoalProjection } from '@/hooks/useGoalProjection';
 import { useProjection } from '@/hooks/useProjection';
 import { useAppStore } from '@/stores/app';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
 import { formatMonthShort } from '@/utils/date';
 import { formatMoney } from '@/utils/money';
 import { AccumulatedChart } from '@/ui/AccumulatedChart';
@@ -22,6 +23,8 @@ import { ALL_PROFILES } from '@/domain/types';
 const RANGES = [6, 12, 24, 36];
 
 export default function FutureScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const router = useRouter();
   const setCompetence = useAppStore((state) => state.setCompetence);
   const scope = useAppStore((state) => state.scope);
@@ -30,6 +33,12 @@ export default function FutureScreen() {
   const [rangeOpen, setRangeOpen] = useState(false);
 
   const { projection, loading } = useProjection(months);
+
+  const monthlyBalances = useMemo(
+    () => projection.map((month) => month.balance),
+    [projection],
+  );
+  const wealth = useGoalProjection(months, monthlyBalances);
 
   const final = projection[projection.length - 1];
   const hasData = projection.some((month) => month.income !== 0 || month.expense !== 0);
@@ -73,10 +82,14 @@ export default function FutureScreen() {
             <Card style={styles.chartCard}>
               <View>
                 <Text variant="label" tone="muted">
-                  Em {months} meses você junta
+                  Em {months} meses
                 </Text>
                 <Money
-                  value={final?.accumulated ?? 0}
+                  value={
+                    wealth.monthlyContribution > 0 || wealth.startingInvested > 0
+                      ? wealth.finalInvested + wealth.finalFreeCash
+                      : (final?.accumulated ?? 0)
+                  }
                   variant="title"
                   colorBySign
                   showSign
@@ -84,6 +97,56 @@ export default function FutureScreen() {
               </View>
 
               <AccumulatedChart projection={projection} onSelectMonth={() => undefined} />
+
+              {wealth.monthlyContribution > 0 || wealth.startingInvested > 0 ? (
+                <View style={styles.wealthBreakdown}>
+                  <View style={styles.wealthRow}>
+                    <View style={styles.wealthLabel}>
+                      <Ionicons name="albums" size={13} color={colors.brandText} />
+                      <Text variant="caption" tone="muted">
+                        Nas caixinhas
+                      </Text>
+                    </View>
+                    <Money value={wealth.finalInvested} variant="label" color={colors.brandText} />
+                  </View>
+
+                  <View style={styles.wealthRow}>
+                    <View style={styles.wealthLabel}>
+                      <Ionicons name="trending-up" size={13} color={colors.positive} />
+                      <Text variant="caption" tone="muted">
+                        Disso, rendimento
+                      </Text>
+                    </View>
+                    <Money value={wealth.totalYield} variant="caption" color={colors.positive} />
+                  </View>
+
+                  <View style={styles.wealthRow}>
+                    <View style={styles.wealthLabel}>
+                      <Ionicons name="wallet-outline" size={13} color={colors.textMuted} />
+                      <Text variant="caption" tone="muted">
+                        Sobra na conta
+                      </Text>
+                    </View>
+                    <Money
+                      value={wealth.finalFreeCash}
+                      variant="caption"
+                      colorBySign
+                    />
+                  </View>
+                </View>
+              ) : (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Criar uma caixinha"
+                  onPress={() => router.push('/goals')}
+                  style={styles.goalsHint}
+                >
+                  <Ionicons name="albums-outline" size={14} color={colors.brandText} />
+                  <Text variant="caption" tone="brand" style={styles.goalsHintText}>
+                    Crie uma caixinha para projetar com rendimento, em vez de somar toda a sobra
+                  </Text>
+                </Pressable>
+              )}
             </Card>
 
             {negativeMonths.length > 0 ? (
@@ -159,7 +222,7 @@ export default function FutureScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   header: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
@@ -185,6 +248,33 @@ const styles = StyleSheet.create({
   },
   chartCard: {
     gap: spacing.lg,
+  },
+  wealthBreakdown: {
+    gap: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    paddingTop: spacing.md,
+  },
+  wealthRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  wealthLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  goalsHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.brandDim,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  goalsHintText: {
+    flex: 1,
   },
   warningCard: {
     flexDirection: 'row',
@@ -223,4 +313,4 @@ const styles = StyleSheet.create({
   pressed: {
     backgroundColor: colors.cardElevated,
   },
-});
+}));

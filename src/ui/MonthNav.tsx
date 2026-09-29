@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
 import { addMonths, currentCompetence, formatMonthLong, type Competence } from '@/utils/date';
 
 import { Text } from './Text';
@@ -12,6 +12,8 @@ export interface MonthNavProps {
 }
 
 export function MonthNav({ competence, onChange }: MonthNavProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const isCurrent = competence === currentCompetence();
 
   return (
@@ -51,7 +53,7 @@ export function MonthNav({ competence, onChange }: MonthNavProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -76,4 +78,4 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.6,
   },
-});
+}));

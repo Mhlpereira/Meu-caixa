@@ -32,7 +32,7 @@ export function summarizeMonth(
   const expensePlanned = sum(expense.map((item) => item.amount));
   const incomeActual = sum(paid(income).map((item) => item.amount));
   const expenseActual = sum(paid(expense).map((item) => item.amount));
-  const committed = sum(expense.filter(isCommitted).map((item) => item.amount));
+  const committed = sum(outflow.filter(isCommitted).map((item) => item.amount));
 
   const investmentPlanned = sum(investment.map((item) => item.amount));
   const investmentActual = sum(paid(investment).map((item) => item.amount));

@@ -6,7 +6,7 @@ import ReanimatedSwipeable, {
 } from 'react-native-gesture-handler/ReanimatedSwipeable';
 
 import type { OccurrenceView } from '@/domain/types';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors , useTint } from '@/theme';
 
 import { Money } from './Money';
 import { Text } from './Text';
@@ -34,6 +34,9 @@ export function OccurrenceRow({
   onTogglePaid,
   onDelete,
 }: OccurrenceRowProps) {
+  const tint = useTint();
+  const styles = useStyles();
+  const colors = useColors();
   const swipeRef = useRef<SwipeableMethods | null>(null);
 
   const paid = occurrence.status === 'paid';
@@ -96,7 +99,7 @@ export function OccurrenceRow({
         onPress={() => onPress(occurrence)}
         style={({ pressed }) => [styles.row, pressed ? styles.pressed : null]}
       >
-        <View style={[styles.icon, { backgroundColor: `${iconColor}22` }]}>
+        <View style={[styles.icon, { backgroundColor: tint(iconColor) }]}>
           <Ionicons name={iconName} size={18} color={iconColor} />
         </View>
 
@@ -154,7 +157,7 @@ export function OccurrenceRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   swipeContainer: {
     borderRadius: radius.md,
   },
@@ -235,4 +238,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.negativeDim,
     marginLeft: spacing.sm,
   },
-});
+}));

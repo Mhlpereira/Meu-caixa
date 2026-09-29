@@ -18,7 +18,8 @@
 | Gestos | `react-native-gesture-handler` + `reanimated` | Swipe na linha do lançamento |
 | Data picker | `@react-native-community/datetimepicker` | Picker nativo, roda no Expo Go |
 | Backup | `expo-file-system` + `expo-sharing` + `expo-document-picker` | Exportar e importar JSON |
-| Barras do sistema | `expo-system-ui` + `expo-navigation-bar` | Tema escuro nas barras do Android |
+| Barras do sistema | `expo-system-ui` + `expo-navigation-bar` | Barras do Android seguem o tema |
+| Câmera / QR | `expo-camera` | Leitor de código de barras embutido, sem dependência extra |
 
 **Atenção:** `androidNavigationBar` e `androidStatusBar` no `app.json` foram
 descontinuados no SDK 57 e **não fazem efeito**. O prebuild avisa, mas o build
@@ -55,6 +56,31 @@ cima do app existente, e a keystore original não era recuperável.
 Por isso o plugin **quebra o build com erro explícito** quando a keystore ou as
 credenciais faltam. Falhar alto é o objetivo: o modo de falha silencioso foi o
 que causou o estrago.
+
+## Boot
+
+```
+1. abre o banco:
+     CREATE TABLE IF NOT EXISTS ...   (tabelas)
+     lê schema_version
+     aplica migrações pendentes
+     CREATE INDEX IF NOT EXISTS ...   (índices, SEMPRE por último)
+2. carrega dados, trava e tema em paralelo
+3. qualquer passo que falhe vira tela de erro com botão "Tentar de novo"
+```
+
+**Os índices rodam depois das migrações, e isso não é detalhe.** Um índice
+sobre coluna nova falha em banco antigo, porque `CREATE TABLE IF NOT EXISTS`
+não adiciona coluna a tabela existente — quem faz isso é a migração. Rodar o
+índice antes quebrava o app de quem já tinha dados, enquanto instalação nova
+funcionava. Bug difícil de ver em teste que só exercita migração isolada.
+
+O boot usa `Promise.allSettled` e sempre termina. Antes era `Promise.all(...)
+.then(...)` sem `.catch`: um passo que rejeitasse deixava o app girando para
+sempre, sem log e sem mensagem. **Falhar visível é requisito, não conforto.**
+
+`getDb()` também não guarda mais a rejeição — antes, um erro transitório na
+abertura do banco brickava o app até reinstalar.
 
 ## Camadas
 

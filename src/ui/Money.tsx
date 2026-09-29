@@ -1,6 +1,6 @@
 import { StyleSheet, Text as RNText, type TextStyle } from 'react-native';
 
-import { balanceColor, colors, typography } from '@/theme';
+import { balanceColor, makeStyles, typography, useColors } from '@/theme';
 import type { Cents } from '@/domain/types';
 import { formatMoney } from '@/utils/money';
 
@@ -27,7 +27,9 @@ export function Money({
   style,
   accessibilityLabel,
 }: MoneyProps) {
-  const resolved = color ?? (colorBySign ? balanceColor(value) : colors.text);
+  const styles = useStyles();
+  const colors = useColors();
+  const resolved = color ?? (colorBySign ? balanceColor(value, colors) : colors.text);
 
   return (
     <RNText
@@ -45,11 +47,11 @@ export function Money({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   tabular: {
     fontVariant: ['tabular-nums'],
   },
   dimmed: {
     opacity: 0.45,
   },
-});
+}));

@@ -6,7 +6,7 @@ import { ALL_PROFILES } from '@/domain/types';
 import type { InstallmentPlan, RecurringPlan } from '@/domain/types';
 import { useCommitments } from '@/hooks/useCommitments';
 import { useAppStore } from '@/stores/app';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors , useTint } from '@/theme';
 import { formatMonthSlash } from '@/utils/date';
 import { Card } from '@/ui/Card';
 import { EmptyState } from '@/ui/EmptyState';
@@ -18,6 +18,8 @@ import { Screen, SectionHeader } from '@/ui/Screen';
 import { Text } from '@/ui/Text';
 
 export default function CommitmentsScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const router = useRouter();
   const scope = useAppStore((state) => state.scope);
 
@@ -130,6 +132,9 @@ export default function CommitmentsScreen() {
 }
 
 function InstallmentCard({ plan, showProfile }: { plan: InstallmentPlan; showProfile: boolean }) {
+  const tint = useTint();
+  const styles = useStyles();
+  const colors = useColors();
   const { commitment } = plan;
   const ratio = plan.totalCount > 0 ? plan.paidCount / plan.totalCount : 0;
   const iconColor = plan.categoryColor ?? colors.textMuted;
@@ -138,7 +143,7 @@ function InstallmentCard({ plan, showProfile }: { plan: InstallmentPlan; showPro
   return (
     <Card style={styles.installmentCard}>
       <View style={styles.installmentHeader}>
-        <View style={[styles.icon, { backgroundColor: `${iconColor}22` }]}>
+        <View style={[styles.icon, { backgroundColor: tint(iconColor) }]}>
           <Ionicons name={iconName} size={18} color={iconColor} />
         </View>
 
@@ -190,13 +195,16 @@ function RecurringRow({
   bordered: boolean;
   positive?: boolean;
 }) {
+  const tint = useTint();
+  const styles = useStyles();
+  const colors = useColors();
   const { commitment } = plan;
   const iconColor = plan.categoryColor ?? colors.textMuted;
   const iconName = (plan.categoryIcon ?? 'ellipse-outline') as keyof typeof Ionicons.glyphMap;
 
   return (
     <View style={[styles.recurringRow, bordered ? styles.bordered : null]}>
-      <View style={[styles.iconSmall, { backgroundColor: `${iconColor}22` }]}>
+      <View style={[styles.iconSmall, { backgroundColor: tint(iconColor) }]}>
         <Ionicons name={iconName} size={16} color={iconColor} />
       </View>
 
@@ -229,7 +237,7 @@ function RecurringRow({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   header: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.sm,
@@ -311,4 +319,4 @@ const styles = StyleSheet.create({
     height: 6,
     borderRadius: 3,
   },
-});
+}));

@@ -2,7 +2,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { useState } from 'react';
 import { Platform, StyleSheet, View } from 'react-native';
 
-import { colors, spacing } from '@/theme';
+import { makeStyles, spacing, useColors } from '@/theme';
 import { formatDateBR, makeISODate, parseISODate, type ISODate } from '@/utils/date';
 
 import { Button } from './Button';
@@ -15,6 +15,8 @@ export interface DateFieldProps {
 }
 
 export function DateField({ value, onChange, label }: DateFieldProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const [open, setOpen] = useState(false);
 
   const { year, month, day } = parseISODate(value);
@@ -54,7 +56,7 @@ export function DateField({ value, onChange, label }: DateFieldProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     gap: spacing.sm,
   },
@@ -64,4 +66,4 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     gap: spacing.sm,
   },
-});
+}));

@@ -18,7 +18,9 @@ import {
 } from '@/services/autoBackup';
 import { useAppStore } from '@/stores/app';
 import { useLockStore } from '@/stores/lock';
-import { colors, radius, spacing } from '@/theme';
+import { useThemeStore } from '@/stores/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
+import { THEMES, THEME_ORDER } from '@/theme/themes';
 import { formatDateBR, makeISODate } from '@/utils/date';
 import { Card } from '@/ui/Card';
 import { Screen, SectionHeader } from '@/ui/Screen';
@@ -29,16 +31,22 @@ function isoFrom(date: Date): string {
 }
 
 export default function SettingsScreen() {
+  const styles = useStyles();
   const router = useRouter();
 
   const profiles = useAppStore((state) => state.profiles);
   const categories = useAppStore((state) => state.categories);
+  const goals = useAppStore((state) => state.goals);
   const bootstrap = useAppStore((state) => state.bootstrap);
   const bumpRevision = useAppStore((state) => state.bumpRevision);
 
   const pinEnabled = useLockStore((state) => state.pinEnabled);
   const biometricsEnabled = useLockStore((state) => state.biometricsEnabled);
   const biometricsLabel = useLockStore((state) => state.biometricsLabel);
+
+  const colors = useColors();
+  const themeName = useThemeStore((state) => state.name);
+  const setTheme = useThemeStore((state) => state.setTheme);
 
   const [busy, setBusy] = useState(false);
   const [folder, setFolder] = useState<BackupFolder | null>(null);
@@ -198,12 +206,77 @@ export default function SettingsScreen() {
             onPress={() => router.push('/profiles')}
           />
           <Row
+            icon="albums"
+            label="Caixinhas"
+            value={`${goals.length}`}
+            onPress={() => router.push('/goals')}
+            bordered
+          />
+          <Row
             icon="pricetags"
             label="Categorias"
             value={`${categories.length}`}
             onPress={() => router.push('/categories')}
             bordered
           />
+        </Card>
+
+        <SectionHeader title="Aparência" />
+        <Card style={styles.themeCard}>
+          <View style={styles.themeRow}>
+            {THEME_ORDER.map((option) => {
+              const preview = THEMES[option];
+              const selected = themeName === option;
+
+              return (
+                <Pressable
+                  key={option}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                  accessibilityLabel={`Tema ${preview.label}. ${preview.description}`}
+                  onPress={() => setTheme(option)}
+                  style={styles.themeOption}
+                >
+                  <View
+                    style={[
+                      styles.themeSwatch,
+                      { backgroundColor: preview.colors.bg, borderColor: preview.colors.border },
+                      selected ? { borderColor: colors.brand, borderWidth: 2 } : null,
+                    ]}
+                  >
+                    <View
+                      style={[styles.themeSwatchCard, { backgroundColor: preview.colors.card }]}
+                    >
+                      <View
+                        style={[styles.themeSwatchBar, { backgroundColor: preview.colors.positive }]}
+                      />
+                      <View
+                        style={[
+                          styles.themeSwatchBar,
+                          styles.themeSwatchBarShort,
+                          { backgroundColor: preview.colors.brand },
+                        ]}
+                      />
+                    </View>
+                  </View>
+
+                  <Text variant="caption" tone={selected ? 'brand' : 'muted'}>
+                    {preview.label}
+                  </Text>
+
+                  {selected ? (
+                    <Ionicons name="checkmark-circle" size={14} color={colors.brand} />
+                  ) : (
+                    <View style={styles.themeCheckSpacer} />
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+
+          <Text variant="caption" tone="faint">
+            {THEMES[themeName].description}
+          </Text>
         </Card>
 
         <SectionHeader title="Segurança" />
@@ -321,6 +394,8 @@ function Row({
   danger?: boolean;
   disabled?: boolean;
 }) {
+  const styles = useStyles();
+  const colors = useColors();
   const tint = danger ? colors.negative : colors.textMuted;
 
   return (
@@ -356,7 +431,7 @@ function Row({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   content: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.xxxl,
@@ -400,4 +475,40 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     lineHeight: 17,
   },
-});
+  themeCard: {
+    gap: spacing.md,
+  },
+  themeRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  themeOption: {
+    flex: 1,
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  themeSwatch: {
+    width: '100%',
+    height: 64,
+    borderRadius: radius.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: spacing.sm,
+    justifyContent: 'flex-end',
+  },
+  themeSwatchCard: {
+    borderRadius: radius.sm,
+    padding: spacing.sm,
+    gap: 4,
+  },
+  themeSwatchBar: {
+    height: 4,
+    borderRadius: 2,
+    width: '70%',
+  },
+  themeSwatchBarShort: {
+    width: '40%',
+  },
+  themeCheckSpacer: {
+    height: 14,
+  },
+}));

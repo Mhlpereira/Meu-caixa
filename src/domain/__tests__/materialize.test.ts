@@ -16,6 +16,7 @@ function commitment(overrides: Partial<Commitment> = {}): Commitment {
     dayOfMonth: null,
     notes: null,
     isInvestment: false,
+    goalId: null,
     archived: false,
     createdAt: '2026-03-01T00:00:00.000Z',
     updatedAt: '2026-03-01T00:00:00.000Z',
@@ -37,6 +38,7 @@ function occurrence(overrides: Partial<Occurrence> = {}): Occurrence {
     paidAt: null,
     isOverridden: false,
     isInvestment: false,
+    goalId: null,
     ...overrides,
   };
 }

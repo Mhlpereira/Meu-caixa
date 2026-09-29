@@ -10,7 +10,7 @@ import Svg, {
 } from 'react-native-svg';
 
 import type { ProjectionMonth } from '@/domain/types';
-import { colors, spacing } from '@/theme';
+import { makeStyles, spacing, useColors } from '@/theme';
 import { formatMonthShort } from '@/utils/date';
 import { formatMoneyCompact } from '@/utils/money';
 
@@ -34,6 +34,8 @@ interface Point {
 }
 
 export function AccumulatedChart({ projection, onSelectMonth }: AccumulatedChartProps) {
+  const styles = useStyles();
+  const colors = useColors();
   const [width, setWidth] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
 
@@ -166,7 +168,7 @@ export function AccumulatedChart({ projection, onSelectMonth }: AccumulatedChart
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   container: {
     gap: spacing.sm,
   },
@@ -191,4 +193,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-});
+}));

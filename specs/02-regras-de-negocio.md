@@ -134,14 +134,20 @@ só mostrar a barra.
 
 Meta zero desliga o acompanhamento — o card some da tela do mês.
 
-**Comprometido**: a fatia das despesas previstas que vem de compromissos
-`installment` ou `recurring`. É o número que responde "quanto do meu salário já
-está vendido antes do mês começar".
+**Comprometido**: tudo que sai da conta de forma já combinada — compromissos
+`installment` ou `recurring` —, **incluindo aportes recorrentes**. É o número
+que responde "quanto do meu salário já está vendido antes do mês começar".
 
 ```
-comprometido = Σ despesas de compromissos type ∈ {installment, recurring}
+comprometido = Σ saídas de compromissos type ∈ {installment, recurring}
+               (independente de is_investment)
 livre        = receitas_previstas − comprometido
 ```
+
+Um aporte mensal de R$ 1.500 é tão comprometido quanto o aluguel: os dois saem
+da conta sem você decidir nada no mês. Investimento sai de **despesas**, porque
+não é gasto, mas não sai de **comprometido**, porque é dinheiro já destinado.
+Aporte avulso não conta — esse você decide na hora.
 
 **Taxa de poupança** do mês: `saldo_previsto / receitas_previstas`, exibida só
 quando `receitas_previstas > 0`.

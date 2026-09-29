@@ -6,7 +6,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-na
 import { setBooleanSetting, setSetting } from '@/repositories/settings';
 import { PIN_LENGTH, removePin, setPin, verifyPin } from '@/services/security';
 import { useLockStore } from '@/stores/lock';
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
 import { Button } from '@/ui/Button';
 import { Card } from '@/ui/Card';
 import { Keypad } from '@/ui/Keypad';
@@ -24,6 +24,8 @@ const TIMEOUTS = [
 ];
 
 export default function SecurityScreen() {
+  const styles = useStyles();
+  const colors = useColors();
   const router = useRouter();
 
   const pinEnabled = useLockStore((state) => state.pinEnabled);
@@ -296,7 +298,7 @@ export default function SecurityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -387,4 +389,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.brand,
     borderColor: colors.brand,
   },
-});
+}));

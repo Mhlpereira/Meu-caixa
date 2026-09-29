@@ -52,6 +52,12 @@
           "faceIDPermission": "Usar Face ID para desbloquear o Meu Caixa."
         }
       ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O Meu Caixa usa a câmera para ler o QR code da nota fiscal."
+        }
+      ],
       "@react-native-community/datetimepicker",
       "./plugins/withQuickEntryWidget",
       "./plugins/withReleaseSigning"

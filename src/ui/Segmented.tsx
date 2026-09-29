@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { colors, radius, spacing } from '@/theme';
+import { makeStyles, radius, spacing, useColors } from '@/theme';
 
 import { Text } from './Text';
 
@@ -17,6 +17,8 @@ export interface SegmentedProps<T extends string> {
 }
 
 export function Segmented<T extends string>({ options, value, onChange }: SegmentedProps<T>) {
+  const styles = useStyles();
+  const colors = useColors();
   return (
     <View style={styles.track}>
       {options.map((option) => {
@@ -37,7 +39,7 @@ export function Segmented<T extends string>({ options, value, onChange }: Segmen
           >
             <Text
               variant="label"
-              color={selected ? '#FFFFFF' : colors.textMuted}
+              color={selected ? colors.onBrand : colors.textMuted}
             >
               {option.label}
             </Text>
@@ -48,7 +50,7 @@ export function Segmented<T extends string>({ options, value, onChange }: Segmen
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeStyles((colors) => ({
   track: {
     flexDirection: 'row',
     backgroundColor: colors.surface,
@@ -63,4 +65,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderRadius: radius.sm,
   },
-});
+}));
