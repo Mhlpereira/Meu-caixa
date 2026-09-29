@@ -291,9 +291,12 @@ const chooserKotlin = (packageName, scheme) => `package ${packageName}
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Rect
 import android.net.Uri
 import android.os.Bundle
+import android.view.Gravity
 import android.view.View
+import android.view.WindowManager
 
 class ${CHOOSER_CLASS} : Activity() {
 
@@ -301,6 +304,8 @@ class ${CHOOSER_CLASS} : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.quick_chooser)
         setFinishOnTouchOutside(true)
+
+        anchorToWidget(intent.sourceBounds)
 
         findViewById<View>(R.id.chooser_entry).setOnClickListener {
             startActivity(Intent(this, ${ACTIVITY_CLASS}::class.java))
@@ -317,24 +322,53 @@ class ${CHOOSER_CLASS} : Activity() {
             finish()
         }
     }
+
+    private fun anchorToWidget(bounds: Rect?) {
+        if (bounds == null) return
+
+        val root = findViewById<View>(R.id.chooser_root)
+
+        root.post {
+            val screen = resources.displayMetrics
+            val margin = (12 * screen.density).toInt()
+
+            val params = window.attributes
+            params.gravity = Gravity.TOP or Gravity.START
+            params.width = WindowManager.LayoutParams.WRAP_CONTENT
+            params.height = WindowManager.LayoutParams.WRAP_CONTENT
+
+            val width = root.width
+            val height = root.height
+
+            val x = bounds.centerX() - width / 2
+            val above = bounds.top - height - margin
+            val below = bounds.bottom + margin
+
+            params.x = x.coerceIn(margin, screen.widthPixels - width - margin)
+            params.y = if (above > margin) above else below
+
+            window.attributes = params
+        }
+    }
 }
 `;
 
 const widgetLayout = `<?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="2dp">
+    android:layout_height="match_parent">
 
     <TextView
         android:id="@+id/widget_button"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_width="58dp"
+        android:layout_height="58dp"
+        android:layout_gravity="center"
         android:gravity="center"
         android:text="+"
         android:textColor="#FFFFFF"
-        android:textSize="26sp"
+        android:textSize="30sp"
         android:textStyle="bold"
+        android:includeFontPadding="false"
         android:contentDescription="@string/quick_entry_widget_description"
         android:background="@drawable/quick_entry_widget_background" />
 </FrameLayout>
@@ -342,67 +376,72 @@ const widgetLayout = `<?xml version="1.0" encoding="utf-8"?>
 
 const chooserLayout = `<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
+    android:id="@+id/chooser_root"
+    android:layout_width="wrap_content"
     android:layout_height="wrap_content"
     android:orientation="horizontal"
-    android:padding="20dp"
-    android:background="@drawable/quick_expense_background">
+    android:gravity="center">
 
     <LinearLayout
         android:id="@+id/chooser_entry"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:orientation="vertical"
         android:gravity="center"
-        android:paddingVertical="18dp"
-        android:layout_marginEnd="8dp"
+        android:layout_marginEnd="14dp"
         android:clickable="true"
-        android:focusable="true"
-        android:background="@drawable/quick_chooser_item">
+        android:focusable="true">
 
         <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:gravity="center"
             android:text="+"
-            android:textColor="#C7D2FE"
-            android:textSize="28sp"
-            android:textStyle="bold" />
+            android:textColor="#FFFFFF"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:background="@drawable/quick_chooser_spot_brand" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Gasto"
-            android:textColor="#8A9AAD"
-            android:textSize="13sp"
-            android:layout_marginTop="6dp" />
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:layout_marginTop="6dp"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:background="@drawable/quick_chooser_label" />
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/chooser_scan"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
         android:orientation="vertical"
         android:gravity="center"
-        android:paddingVertical="18dp"
         android:clickable="true"
-        android:focusable="true"
-        android:background="@drawable/quick_chooser_item">
+        android:focusable="true">
 
         <ImageView
-            android:layout_width="28dp"
-            android:layout_height="28dp"
+            android:layout_width="58dp"
+            android:layout_height="58dp"
+            android:padding="16dp"
             android:src="@drawable/quick_chooser_camera"
-            android:contentDescription="@string/quick_entry_scan_description" />
+            android:contentDescription="@string/quick_entry_scan_description"
+            android:background="@drawable/quick_chooser_spot_dark" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Nota"
-            android:textColor="#8A9AAD"
-            android:textSize="13sp"
-            android:layout_marginTop="6dp" />
+            android:textColor="#FFFFFF"
+            android:textSize="12sp"
+            android:layout_marginTop="6dp"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="2dp"
+            android:background="@drawable/quick_chooser_label" />
     </LinearLayout>
 </LinearLayout>
 `;
@@ -413,7 +452,7 @@ const cameraVector = `<?xml version="1.0" encoding="utf-8"?>
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24"
-    android:tint="#C7D2FE">
+    android:tint="#FFFFFF">
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M9,2L7.17,4H4C2.9,4 2,4.9 2,6v12c0,1.1 0.9,2 2,2h16c1.1,0 2,-0.9 2,-2V6c0,-1.1 -0.9,-2 -2,-2h-3.17L15,2H9zM12,17c-2.76,0 -5,-2.24 -5,-5s2.24,-5 5,-5 5,2.24 5,5 -2.24,5 -5,5zM12,9c-1.66,0 -3,1.34 -3,3s1.34,3 3,3 3,-1.34 3,-3 -1.34,-3 -3,-3z" />
@@ -543,6 +582,13 @@ const shape = (fill, stroke, radius) => `<?xml version="1.0" encoding="utf-8"?>
 </shape>
 `;
 
+const circle = (fill, stroke) => `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+    <solid android:color="${fill}" />
+    <stroke android:width="1dp" android:color="${stroke}" />
+</shape>
+`;
+
 const solid = (fill, radius) => `<?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="${fill}" />
@@ -557,6 +603,10 @@ const dialogTheme = `
     <item name="android:windowCloseOnTouchOutside">true</item>
     <item name="android:backgroundDimAmount">0.6</item>
     <item name="android:windowSoftInputMode">adjustResize|stateVisible</item>
+  </style>
+  <style name="Theme.QuickChooser" parent="Theme.QuickExpense">
+    <item name="android:backgroundDimAmount">0.35</item>
+    <item name="android:windowAnimationStyle">@android:style/Animation.Dialog</item>
   </style>`;
 
 function writeFile(filePath, contents) {
@@ -609,12 +659,21 @@ const withNativeFiles = (config) =>
 
       writeFile(
         path.join(main, 'res/drawable/quick_entry_widget_background.xml'),
-        shape('#6366F1', '#818CF8', '20dp'),
+        circle('#6366F1', '#818CF8'),
       );
       writeFile(
-        path.join(main, 'res/drawable/quick_chooser_item.xml'),
-        shape('#0B0F14', '#253040', '18dp'),
+        path.join(main, 'res/drawable/quick_chooser_spot_brand.xml'),
+        circle('#6366F1', '#818CF8'),
       );
+      writeFile(
+        path.join(main, 'res/drawable/quick_chooser_spot_dark.xml'),
+        circle('#1A222D', '#3A465A'),
+      );
+      writeFile(
+        path.join(main, 'res/drawable/quick_chooser_label.xml'),
+        solid('#000000AA', '10dp'),
+      );
+
       writeFile(
         path.join(main, 'res/drawable/quick_expense_background.xml'),
         shape('#151B23', '#253040', '24dp'),
@@ -670,7 +729,8 @@ const withManifestEntries = (config) =>
         $: {
           'android:name': `.${name}`,
           'android:exported': 'false',
-          'android:theme': '@style/Theme.QuickExpense',
+          'android:theme':
+            name === CHOOSER_CLASS ? '@style/Theme.QuickChooser' : '@style/Theme.QuickExpense',
           'android:excludeFromRecents': 'true',
           'android:noHistory': 'true',
           'android:launchMode': 'singleTop',

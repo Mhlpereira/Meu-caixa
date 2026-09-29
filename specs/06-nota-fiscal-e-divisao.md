@@ -183,16 +183,29 @@ sobra de centavos indo para o primeiro — mesma regra de `splitInstallments`.
 
 ## Widget
 
-O widget é **do tamanho de um ícone** (1×1) e abre um seletor com as duas
-formas de lançar:
+O widget é um **botão circular** que abre dois spots ancorados nele:
 
 ```
-tela inicial          ao tocar
-┌────┐          ┌──────────────────┐
-│ +  │          │   +        📷    │
-└────┘          │ Gasto     Nota   │
-                └──────────────────┘
+tela inicial        ao tocar
+                  ( + )  (📷)
+  ( + )           Gasto   Nota
+                    ↑
+                  ( + )
 ```
+
+Os spots aparecem **colados no widget**, não no centro da tela. Funciona porque
+o launcher passa a posição do widget em `Intent.getSourceBounds()` ao disparar
+o clique — o mesmo mecanismo que os apps usam para animar a partir do ícone. Se
+não couber acima, abre abaixo; nunca vaza pelas bordas.
+
+O escurecimento do fundo é leve (35%): é um menu, não um bloqueio.
+
+**O botão é um círculo com fundo transparente em volta.** Isso é defesa contra
+launcher: a HyperOS ignora `targetCellWidth` e desenha 4 células mesmo com o
+widget declarado 1×1 — verificado com `dumpsys appwidget`, que mostra o sistema
+registrando corretamente 40dp × 40dp. Em vez de brigar com o launcher, o
+widget fica bom em qualquer tamanho que ele imponha, porque só o círculo é
+visível.
 
 | Opção | O que faz |
 | --- | --- |
