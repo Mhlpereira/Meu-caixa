@@ -268,7 +268,7 @@ class ${WIDGET_CLASS} : AppWidgetProvider() {
         appWidgetIds: IntArray
     ) {
         val intent = Intent(context, ${CHOOSER_CLASS}::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
         val pending = PendingIntent.getActivity(
@@ -724,6 +724,8 @@ const withManifestEntries = (config) =>
       (item) => !dialogActivities.some((name) => item.$?.['android:name'] === `.${name}`),
     );
 
+    const packageName = AndroidConfig.Package.getPackage(mod);
+
     for (const name of dialogActivities) {
       application.activity.push({
         $: {
@@ -731,6 +733,7 @@ const withManifestEntries = (config) =>
           'android:exported': 'false',
           'android:theme':
             name === CHOOSER_CLASS ? '@style/Theme.QuickChooser' : '@style/Theme.QuickExpense',
+          'android:taskAffinity': `${packageName}.quick`,
           'android:excludeFromRecents': 'true',
           'android:noHistory': 'true',
           'android:launchMode': 'singleTop',

@@ -200,6 +200,24 @@ não couber acima, abre abaixo; nunca vaza pelas bordas.
 
 O escurecimento do fundo é leve (35%): é um menu, não um bloqueio.
 
+### Task separada, e por quê
+
+As telinhas nativas declaram `taskAffinity` própria (`<pacote>.quick`), distinta
+da do app. Sem isso, `FLAG_ACTIVITY_NEW_TASK` **não cria task nova**: o Android
+reconhece a afinidade compartilhada e traz a task do app para frente. A
+MainActivity subia junto com a tela de PIN, e o seletor aparecia sobre o app em
+vez de sobre a tela inicial — matando a praticidade que justifica o widget.
+
+### O lançamento rápido não passa pelo PIN
+
+Decisão consciente. Exigir desbloqueio no widget o tornaria tão lento quanto
+abrir o app, e aí ele não teria razão de existir.
+
+O risco é contido: pelo widget dá para **adicionar** um gasto, nunca para
+**ver** algo. Saldo, lançamentos, caixinhas e projeções continuam atrás do PIN,
+porque vivem no app. O pior caso é alguém com o celular desbloqueado lançar uma
+despesa falsa — visível e corrigível na próxima vez que você abrir.
+
 **O botão é um círculo com fundo transparente em volta.** Isso é defesa contra
 launcher: a HyperOS ignora `targetCellWidth` e desenha 4 células mesmo com o
 widget declarado 1×1 — verificado com `dumpsys appwidget`, que mostra o sistema
