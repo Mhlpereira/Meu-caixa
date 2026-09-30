@@ -208,6 +208,28 @@ reconhece a afinidade compartilhada e traz a task do app para frente. A
 MainActivity subia junto com a tela de PIN, e o seletor aparecia sobre o app em
 vez de sobre a tela inicial — matando a praticidade que justifica o widget.
 
+### Campo de dinheiro na telinha nativa
+
+O valor é mostrado num `TextView` e digitado num `EditText` invisível de 1dp
+que guarda **apenas dígitos**. Parece rebuscado, mas é o único jeito correto:
+`inputType="number"` filtra tudo que não é dígito, então escrever `R$ 0,00` no
+próprio campo faz o Android guardar `000` — e qualquer `setSelection` baseado
+no texto formatado aponta para fora do buffer e derruba o app no `onCreate`.
+
+Separar display de entrada elimina a classe inteira de bug, porque não existe
+mais posição de cursor para errar.
+
+### Como testar a telinha nativa
+
+`adb shell am start` **não abre** essas activities: elas são
+`exported="false"` e o sistema recusa com `SecurityException`. Marcar como
+exportada só para testar abriria a tela para qualquer app do aparelho — não
+compensa.
+
+O jeito é tocar no widget e ler `adb logcat -b crash -d`, que guarda o rastro
+completo. Compilar não prova nada aqui: o crash acima passou por três builds
+verdes porque nenhuma etapa do build executa a tela.
+
 ### O lançamento rápido não passa pelo PIN
 
 Decisão consciente. Exigir desbloqueio no widget o tornaria tão lento quanto

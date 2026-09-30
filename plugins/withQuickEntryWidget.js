@@ -20,6 +20,9 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
+import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
+import android.widget.TextView
 import android.widget.Toast
 import java.io.File
 import java.math.BigDecimal
@@ -37,11 +40,11 @@ private data class CategoryOption(val id: String?, val label: String) {
 class ${ACTIVITY_CLASS} : Activity() {
 
     private var amountCents: Long = 0
-    private var suppressWatcher = false
     private var categories: List<CategoryOption> = emptyList()
     private var selectedCategoryId: String? = null
 
     private lateinit var amountInput: EditText
+    private lateinit var amountDisplay: TextView
     private lateinit var nameInput: EditText
     private lateinit var categorySpinner: Spinner
 
@@ -49,8 +52,10 @@ class ${ACTIVITY_CLASS} : Activity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.quick_expense_dialog)
         setFinishOnTouchOutside(true)
+        widenWindow()
 
         amountInput = findViewById(R.id.quick_amount)
+        amountDisplay = findViewById(R.id.quick_amount_display)
         nameInput = findViewById(R.id.quick_name)
         categorySpinner = findViewById(R.id.quick_category)
 
@@ -60,7 +65,22 @@ class ${ACTIVITY_CLASS} : Activity() {
         findViewById<Button>(R.id.quick_cancel).setOnClickListener { finish() }
         findViewById<Button>(R.id.quick_save).setOnClickListener { save() }
 
+        amountDisplay.setOnClickListener { focusAmount() }
+        focusAmount()
+    }
+
+    private fun focusAmount() {
         amountInput.requestFocus()
+        val manager = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+        manager.showSoftInput(amountInput, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun widenWindow() {
+        val metrics = resources.displayMetrics
+        window?.setLayout(
+            (metrics.widthPixels * 0.92).toInt(),
+            WindowManager.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun databaseFile(): File = File(filesDir, "${DB_RELATIVE_PATH}")
@@ -82,21 +102,13 @@ class ${ACTIVITY_CLASS} : Activity() {
             override fun onTextChanged(s: CharSequence?, a: Int, b: Int, c: Int) {}
 
             override fun afterTextChanged(editable: Editable) {
-                if (suppressWatcher) return
-                suppressWatcher = true
-
-                val digits = editable.toString().replace(Regex("[^0-9]"), "").take(12)
+                val digits = editable.toString().filter { it.isDigit() }.take(12)
                 amountCents = digits.toLongOrNull() ?: 0L
-
-                val formatted = formatMoney(amountCents)
-                editable.replace(0, editable.length, formatted)
-                amountInput.setSelection(formatted.length)
-
-                suppressWatcher = false
+                amountDisplay.text = formatMoney(amountCents)
             }
         })
 
-        amountInput.setText(formatMoney(0))
+        amountDisplay.text = formatMoney(0)
     }
 
     private fun formatMoney(cents: Long): String {
@@ -460,106 +472,126 @@ const cameraVector = `<?xml version="1.0" encoding="utf-8"?>
 `;
 
 const dialogLayout = `<?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:padding="24dp"
+    android:fillViewport="true"
     android:background="@drawable/quick_expense_background">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Novo gasto"
-        android:textColor="#8A9AAD"
-        android:textSize="12sp"
-        android:letterSpacing="0.08"
-        android:layout_marginBottom="12dp" />
-
-    <EditText
-        android:id="@+id/quick_amount"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="number"
-        android:textColor="#E8EEF5"
-        android:textSize="34sp"
-        android:textStyle="bold"
-        android:gravity="center"
-        android:background="@android:color/transparent"
-        android:importantForAutofill="no"
-        android:layout_marginBottom="20dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Nome"
-        android:textColor="#8A9AAD"
-        android:textSize="13sp"
-        android:layout_marginBottom="6dp" />
-
-    <EditText
-        android:id="@+id/quick_name"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:inputType="textCapSentences"
-        android:maxLength="60"
-        android:hint="Almoço, mercado…"
-        android:textColorHint="#5B6B7E"
-        android:textColor="#E8EEF5"
-        android:textSize="15sp"
-        android:paddingHorizontal="14dp"
-        android:paddingVertical="12dp"
-        android:background="@drawable/quick_expense_field"
-        android:importantForAutofill="no"
-        android:layout_marginBottom="16dp" />
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Categoria"
-        android:textColor="#8A9AAD"
-        android:textSize="13sp"
-        android:layout_marginBottom="6dp" />
-
-    <Spinner
-        android:id="@+id/quick_category"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:minHeight="48dp"
-        android:paddingHorizontal="10dp"
-        android:background="@drawable/quick_expense_field"
-        android:layout_marginBottom="24dp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="end">
+        android:orientation="vertical"
+        android:padding="28dp">
 
-        <Button
-            android:id="@+id/quick_cancel"
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:text="Cancelar"
+            android:layout_height="wrap_content"
+            android:text="NOVO GASTO"
             android:textColor="#8A9AAD"
-            android:textAllCaps="false"
-            android:textSize="15sp"
-            android:background="@android:color/transparent"
-            android:layout_marginEnd="8dp" />
+            android:textSize="11sp"
+            android:letterSpacing="0.12"
+            android:layout_marginBottom="20dp" />
 
-        <Button
-            android:id="@+id/quick_save"
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="28dp">
+
+            <TextView
+                android:id="@+id/quick_amount_display"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#E8EEF5"
+                android:textSize="40sp"
+                android:textStyle="bold"
+                android:gravity="center"
+                android:includeFontPadding="false"
+                android:clickable="true"
+                android:focusable="false" />
+
+            <EditText
+                android:id="@+id/quick_amount"
+                android:layout_width="1dp"
+                android:layout_height="1dp"
+                android:alpha="0"
+                android:inputType="number"
+                android:cursorVisible="false"
+                android:importantForAutofill="no"
+                android:background="@android:color/transparent" />
+        </FrameLayout>
+
+        <TextView
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
-            android:minWidth="120dp"
-            android:text="Salvar"
-            android:textColor="#FFFFFF"
-            android:textAllCaps="false"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:background="@drawable/quick_expense_save" />
+            android:layout_height="wrap_content"
+            android:text="Nome"
+            android:textColor="#8A9AAD"
+            android:textSize="13sp"
+            android:layout_marginBottom="8dp" />
+
+        <EditText
+            android:id="@+id/quick_name"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:inputType="textCapSentences"
+            android:maxLength="60"
+            android:maxLines="1"
+            android:hint="Almoço, mercado…"
+            android:textColorHint="#5B6B7E"
+            android:textColor="#E8EEF5"
+            android:textSize="16sp"
+            android:paddingHorizontal="16dp"
+            android:background="@drawable/quick_expense_field"
+            android:importantForAutofill="no"
+            android:layout_marginBottom="20dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Categoria"
+            android:textColor="#8A9AAD"
+            android:textSize="13sp"
+            android:layout_marginBottom="8dp" />
+
+        <Spinner
+            android:id="@+id/quick_category"
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:paddingHorizontal="12dp"
+            android:background="@drawable/quick_expense_field"
+            android:layout_marginBottom="28dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/quick_cancel"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:layout_height="54dp"
+                android:text="Cancelar"
+                android:textColor="#8A9AAD"
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                android:background="@drawable/quick_expense_field"
+                android:layout_marginEnd="12dp" />
+
+            <Button
+                android:id="@+id/quick_save"
+                android:layout_width="0dp"
+                android:layout_weight="1.4"
+                android:layout_height="54dp"
+                android:text="Salvar"
+                android:textColor="#FFFFFF"
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                android:background="@drawable/quick_expense_save" />
+        </LinearLayout>
     </LinearLayout>
-</LinearLayout>
+</ScrollView>
 `;
 
 const spinnerItem = (padding) => `<?xml version="1.0" encoding="utf-8"?>
@@ -602,7 +634,7 @@ const dialogTheme = `
     <item name="android:windowIsTranslucent">true</item>
     <item name="android:windowCloseOnTouchOutside">true</item>
     <item name="android:backgroundDimAmount">0.6</item>
-    <item name="android:windowSoftInputMode">adjustResize|stateVisible</item>
+    <item name="android:windowSoftInputMode">adjustPan|stateVisible</item>
   </style>
   <style name="Theme.QuickChooser" parent="Theme.QuickExpense">
     <item name="android:backgroundDimAmount">0.35</item>
